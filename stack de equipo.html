@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stack Desarrollo Equipo</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Nueva Paleta de Colores de la Marca */
+    :root {
+      --brand-navy: #14213D;
+      --brand-accent: #FCA311;
+      --brand-light: #E5E5E5;
+      --brand-black: #000000;
+      --brand-white: #FFFFFF;
+
+      --border-radius-xl: 16px;
+      --border-radius-lg: 10px;
+      --border-radius-md: 8px;
+    }
+
+    /* Estilos base del documento */
+    body {
+      font-family: 'League Spartan', sans-serif;
+      background-color: var(--brand-light); /* Fondo gris claro */
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      color: var(--brand-black);
+    }
+
+    /* Contenedor principal */
+    .stacks { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+      gap: 24px; 
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    /* Tarjetas principales */
+    .card { 
+      background: var(--brand-white);
+      border-radius: var(--border-radius-xl); 
+      overflow: hidden; 
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: 2px solid transparent;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(20, 33, 61, 0.2);
+      border-color: var(--brand-accent); /* Borde naranja al pasar el mouse */
+    }
+
+    /* Cabecera de la tarjeta (Azul Marino) */
+    .card-header { 
+      background-color: var(--brand-navy); 
+      padding: 24px 24px 16px; 
+      border-bottom: 4px solid var(--brand-accent); /* Línea de acento naranja */
+    }
+    
+    .card-role { 
+      font-size: 13px; 
+      font-weight: 700; 
+      letter-spacing: 0.1em; 
+      text-transform: uppercase; 
+      margin-bottom: 4px; 
+      color: var(--brand-accent); /* Texto naranja */
+    }
+    
+    .card-name { 
+      font-size: 24px; 
+      font-weight: 700; 
+      color: var(--brand-white); 
+      letter-spacing: -0.02em;
+    }
+    
+    /* Cuerpo de la tarjeta */
+    .card-body { 
+      padding: 20px; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 10px; 
+    }
+
+    /* Herramientas (Items interiores) */
+    .tool { 
+      display: flex; 
+      align-items: center; 
+      gap: 14px; 
+      padding: 12px 14px; 
+      border-radius: var(--border-radius-lg); 
+      background: var(--brand-light); /* Fondo gris claro */
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+    
+    .tool:hover {
+      background: var(--brand-navy); /* Se vuelve azul marino */
+      color: var(--brand-white); /* Texto blanco */
+      transform: translateX(4px); /* Pequeño empuje a la derecha */
+    }
+
+    .tool:hover .tool-name {
+      color: var(--brand-white);
+    }
+
+    .tool:hover .tool-desc {
+      color: var(--brand-light);
+      opacity: 0.8;
+    }
+
+    /* Iconos de herramientas */
+    .tool-icon { 
+      width: 40px; 
+      height: 40px; 
+      border-radius: var(--border-radius-md); 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      flex-shrink: 0; 
+      font-size: 18px; 
+      font-weight: 700; 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    /* Textos de herramientas */
+    .tool-info { display: flex; flex-direction: column; gap: 2px; }
+    
+    .tool-name { 
+      font-size: 16px; 
+      font-weight: 700; 
+      color: var(--brand-black); 
+      line-height: 1.1; 
+      transition: color 0.2s;
+    }
+    
+    .tool-desc { 
+      font-size: 13px; 
+      font-weight: 500;
+      color: var(--brand-black); 
+      opacity: 0.6;
+      line-height: 1.2; 
+      transition: color 0.2s;
+    }
+    
+    /* Etiqueta "Core" */
+    .tag { 
+      display: inline-block; 
+      font-size: 12px; 
+      font-weight: 800; 
+      padding: 4px 10px; 
+      border-radius: 6px; 
+      margin-left: auto; 
+      flex-shrink: 0; 
+      text-transform: uppercase; 
+      letter-spacing: 0.05em;
+      background-color: var(--brand-accent);
+      color: var(--brand-black);
+    }
+
+    /* En hover de la herramienta, que el tag core resalte distinto si se desea */
+    .tool:hover .tag {
+      background-color: var(--brand-white);
+      color: var(--brand-navy);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="stacks">
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-role">Líder · Backend</div>
+        <div class="card-name">Fernando Flor</div>
+      </div>
+      <div class="card-body">
+        <div class="tool">
+          <div class="tool-icon" style="background:#3C873A;color:#fff">N</div>
+          <div class="tool-info"><span class="tool-name">Node.js + Express</span><span class="tool-desc">Servidor y APIs REST</span></div>
+          <span class="tag">CORE</span>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#00758F;color:#fff">M</div>
+          <div class="tool-info"><span class="tool-name">MySQL2</span><span class="tool-desc">Driver para Node.js</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#CB3837;color:#fff">N</div>
+          <div class="tool-info"><span class="tool-name">Nodemon</span><span class="tool-desc">Recarga automática</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#FF6C37;color:#fff">P</div>
+          <div class="tool-info"><span class="tool-name">Postman</span><span class="tool-desc">Testear endpoints</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#000000;color:#fff">G</div>
+          <div class="tool-info"><span class="tool-name">Git + GitHub</span><span class="tool-desc">Repo, ramas, PRs</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#007ACC;color:#fff">V</div>
+          <div class="tool-info"><span class="tool-name">VS Code</span><span class="tool-desc">Editor principal</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-role">Frontend</div>
+        <div class="card-name">Juan Carlos Aceval</div>
+      </div>
+      <div class="card-body">
+        <div class="tool">
+          <div class="tool-icon" style="background:#F0DB4F;color:#222">J</div>
+          <div class="tool-info"><span class="tool-name">HTML · CSS · JS</span><span class="tool-desc">Base del frontend</span></div>
+          <span class="tag">CORE</span>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#563D7C;color:#fff">B</div>
+          <div class="tool-info"><span class="tool-name">Bootstrap 5</span><span class="tool-desc">Componentes y grilla</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#007ACC;color:#fff">V</div>
+          <div class="tool-info"><span class="tool-name">VS Code</span><span class="tool-desc">+ Live Server</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#E34F26;color:#fff">F</div>
+          <div class="tool-info"><span class="tool-name">Firefox / Chrome</span><span class="tool-desc">Debug e inspección</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#000000;color:#fff">G</div>
+          <div class="tool-info"><span class="tool-name">Git</span><span class="tool-desc">Rama feature/frontend</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-role">Base de Datos</div>
+        <div class="card-name">Santiago Medina</div>
+      </div>
+      <div class="card-body">
+        <div class="tool">
+          <div class="tool-icon" style="background:#00758F;color:#fff">M</div>
+          <div class="tool-info"><span class="tool-name">MySQL 8</span><span class="tool-desc">Motor de BD</span></div>
+          <span class="tag">CORE</span>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#1d6fa5;color:#fff">W</div>
+          <div class="tool-info"><span class="tool-name">Workbench</span><span class="tool-desc">Diseño + admin visual</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#888;color:#fff">D</div>
+          <div class="tool-info"><span class="tool-name">dbdiagram.io</span><span class="tool-desc">Diagrama ER online</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#000000;color:#fff">G</div>
+          <div class="tool-info"><span class="tool-name">Git</span><span class="tool-desc">Versionar scripts .sql</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#007ACC;color:#fff">V</div>
+          <div class="tool-info"><span class="tool-name">VS Code</span><span class="tool-desc">Editar scripts SQL</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-role">Diseño · Docs</div>
+        <div class="card-name">Liz Benitez</div>
+      </div>
+      <div class="card-body">
+        <div class="tool">
+          <div class="tool-icon" style="background:#F24E1E;color:#fff">F</div>
+          <div class="tool-info"><span class="tool-name">Figma</span><span class="tool-desc">Wireframes y mockups</span></div>
+          <span class="tag">CORE</span>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#000;color:#fff">N</div>
+          <div class="tool-info"><span class="tool-name">Notion</span><span class="tool-desc">Documentación del proyecto</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#0F9D58;color:#fff">G</div>
+          <div class="tool-info"><span class="tool-name">Google Docs</span><span class="tool-desc">Actas, informes</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#0079BF;color:#fff">T</div>
+          <div class="tool-info"><span class="tool-name">Trello</span><span class="tool-desc">Tablero de tareas</span></div>
+        </div>
+        <div class="tool">
+          <div class="tool-icon" style="background:#000000;color:#fff">G</div>
+          <div class="tool-info"><span class="tool-name">Git</span><span class="tool-desc">Actualizar README</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
