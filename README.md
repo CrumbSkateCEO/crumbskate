@@ -1,11 +1,11 @@
-# 🛹 Crumbskate
+#  Crumbskate
 
 E-commerce de ropa y accesorios skater orientado a jóvenes argentinos.
 Los pagos se procesan a través de Mercado Libre.
 
 ---
 
-## 👥 Equipo
+##  Equipo
 
 | Integrante | Rol |
 |---|---|
@@ -16,7 +16,7 @@ Los pagos se procesan a través de Mercado Libre.
 
 ---
 
-## 🗂️ Estructura del repositorio
+##  Estructura del repositorio
 
 ```
 crumbskate/
@@ -28,7 +28,7 @@ crumbskate/
 
 ---
 
-## 🚀 Cómo levantar el proyecto localmente
+##  Cómo levantar el proyecto localmente
 
 ### 1. Backend
 
@@ -53,7 +53,7 @@ source database/02_datos_prueba.sql
 
 ---
 
-## 🔌 Endpoints de la API
+##  Endpoints de la API
 
 | Método | Ruta | Auth | Descripción |
 |---|---|---|---|
@@ -76,7 +76,7 @@ source database/02_datos_prueba.sql
 
 ---
 
-## 🔐 Seguridad implementada
+##  Seguridad implementada
 
 - Contraseñas hasheadas con **bcryptjs**
 - Autenticación con **JWT** (expira en 7 días)
