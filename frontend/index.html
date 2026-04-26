@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es" data-theme="skate_dark">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <link
@@ -11,6 +11,13 @@
     <link rel="apple-touch-icon" href="/src/assets/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CrumbSkate</title>
+    <script>
+      // Aplicar tema antes de que React cargue para evitar flash
+      (function () {
+        const savedTheme = localStorage.getItem("theme") || "skate_dark";
+        document.documentElement.setAttribute("data-theme", savedTheme);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

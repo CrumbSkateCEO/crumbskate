@@ -1,7 +1,20 @@
 import { useState } from "react";
 
+const formatPrice = (n) =>
+  new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 0,
+  }).format(n);
+
 const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState("todos");
+  const [addedIds, setAddedIds] = useState([]);
+
+  const handleAddToCart = (id) => {
+    setAddedIds((prev) => [...prev, id]);
+    setTimeout(() => setAddedIds((prev) => prev.filter((x) => x !== id)), 1800);
+  };
 
   // Mock de productos - Ropa y accesorios skater
   const products = [
@@ -10,8 +23,6 @@ const Home = () => {
       name: "Remera Crumb Classic",
       price: 1299,
       category: "remeras",
-      image: "https://via.placeholder.com/300x200?text=Remera+Classic",
-      rating: 4.8,
       sizes: ["XS", "S", "M", "L", "XL", "XXL"],
     },
     {
@@ -19,8 +30,6 @@ const Home = () => {
       name: "Buzo Crumbskate Gris",
       price: 2499,
       category: "buzos",
-      image: "https://via.placeholder.com/300x200?text=Buzo+Gris",
-      rating: 4.9,
       sizes: ["S", "M", "L", "XL"],
     },
     {
@@ -28,33 +37,15 @@ const Home = () => {
       name: "Gorra Crumb Skate",
       price: 899,
       category: "gorras",
-      image: "https://via.placeholder.com/300x200?text=Gorra+Crumb",
-      rating: 4.7,
       stockInfo: "¡Últimas unidades!",
     },
-    {
-      id: 4,
-      name: "Medias Estampadas",
-      price: 349,
-      category: "medias",
-      image: "https://via.placeholder.com/300x200?text=Medias",
-      rating: 4.6,
-    },
-    {
-      id: 5,
-      name: "Bolso Crumbskate Negro",
-      price: 1899,
-      category: "bolsos",
-      image: "https://via.placeholder.com/300x200?text=Bolso+Negro",
-      rating: 4.8,
-    },
+    { id: 4, name: "Medias Estampadas", price: 349, category: "medias" },
+    { id: 5, name: "Bolso Crumbskate Negro", price: 1899, category: "bolsos" },
     {
       id: 6,
       name: "Accesorios Skater Pack",
       price: 599,
       category: "accesorios",
-      image: "https://via.placeholder.com/300x200?text=Accesorios+Pack",
-      rating: 4.5,
       stockLimitado: true,
     },
     {
@@ -62,8 +53,6 @@ const Home = () => {
       name: "Remera Thrasher Style",
       price: 1399,
       category: "remeras",
-      image: "https://via.placeholder.com/300x200?text=Remera+Thrasher",
-      rating: 4.9,
       sizes: ["XS", "S", "M", "L", "XL", "XXL"],
     },
     {
@@ -71,8 +60,6 @@ const Home = () => {
       name: "Buzo Santa Cruz",
       price: 2699,
       category: "buzos",
-      image: "https://via.placeholder.com/300x200?text=Santa+Cruz",
-      rating: 4.8,
       sizes: ["S", "M", "L", "XL"],
     },
   ];
@@ -97,14 +84,28 @@ const Home = () => {
       {/* Hero Section */}
       <section className="hero bg-base-200 min-h-[500px] overflow-hidden relative w-screen ml-[calc(50%-50vw)] py-20 flex flex-col items-center justify-center">
         {/* Decoraciones de fondo */}
+
+        {/* Bola 8 */}
         <div className="absolute top-12 left-6 md:top-24 md:left-24 w-28 h-28 md:w-40 md:h-40 bg-neutral rounded-full flex items-center justify-center shadow-xl transform -rotate-12 hover:scale-110 transition-transform duration-500 z-0 opacity-90 border-4 border-neutral-content/10">
           <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full flex items-center justify-center">
-            <span className="text-neutral text-5xl md:text-6xl font-black">8</span>
+            <span className="text-neutral text-5xl md:text-6xl font-black">
+              8
+            </span>
           </div>
         </div>
 
-        <div className="absolute bottom-12 right-6 md:bottom-24 md:right-24 w-32 h-32 md:w-48 md:h-48 bg-base-100 rounded-xl shadow-xl transform rotate-6 hover:rotate-0 hover:scale-110 transition-all duration-500 z-0 p-2 border-4 border-base-300">
-          <img src="https://www.crosstheline.com.ar/products/remera-santa-cruz-copia" alt="Remera Skate" className="w-full h-full object-cover rounded-lg" />
+        {/* T-Shirt SVG Replacing Image - Bottom Right */}
+        <div className="absolute bottom-12 right-6 md:bottom-24 md:right-24 w-32 h-32 md:w-48 md:h-48 bg-base-100 rounded-xl shadow-xl transform rotate-6 hover:-rotate-3 hover:scale-110 transition-all duration-500 z-0 p-4 md:p-6 border-4 border-base-300 text-primary flex items-center justify-center group overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0"></div>
+          <svg
+            className="w-full h-full drop-shadow-md group-hover:drop-shadow-[0_0_15px_rgba(255,140,0,0.5)] transition-all z-10"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            stroke="none"
+          >
+            <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
+          </svg>
         </div>
 
         <div className="relative z-10 w-full flex justify-center mt-[-2rem]">
@@ -121,16 +122,26 @@ const Home = () => {
       {/* Quick Info */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-base-200 p-8 rounded-xl text-center shadow-lg hover:shadow-xl transition-all border border-neutral/50">
-          <p className="text-lg font-bold text-base-content">100% Indumentaria Skater</p>
-          <p className="text-sm text-base-content/70 mt-2">Diseños exclusivos y durabilidad</p>
+          <p className="text-lg font-bold text-base-content">
+            100% Indumentaria Skater
+          </p>
+          <p className="text-sm text-base-content/70 mt-2">
+            Diseños exclusivos y durabilidad
+          </p>
         </div>
         <div className="bg-base-200 p-8 rounded-xl text-center shadow-lg hover:shadow-xl transition-all border border-neutral/50">
           <p className="text-lg font-bold text-base-content">Compra Segura</p>
-          <p className="text-sm text-base-content/70 mt-2">Transacciones vía Mercado Libre</p>
+          <p className="text-sm text-base-content/70 mt-2">
+            Transacciones vía Mercado Libre
+          </p>
         </div>
         <div className="bg-base-200 p-8 rounded-xl text-center shadow-lg hover:shadow-xl transition-all border border-neutral/50">
-          <p className="text-lg font-bold text-base-content">Envíos a todo el país</p>
-          <p className="text-sm text-base-content/70 mt-2">Llegamos a cada rincón de Argentina</p>
+          <p className="text-lg font-bold text-base-content">
+            Envíos a todo el país
+          </p>
+          <p className="text-sm text-base-content/70 mt-2">
+            Llegamos a cada rincón de Argentina
+          </p>
         </div>
       </section>
 
@@ -146,10 +157,11 @@ const Home = () => {
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={`btn btn-sm md:btn-md font-bold transition-all uppercase tracking-wider text-xs md:text-sm border-0 ${selectedCategory === category.id
-                ? "bg-primary text-primary-content shadow-[0_0_15px_rgba(255,140,0,0.4)]"
-                : "bg-base-200 text-base-content/70 hover:text-neutral-content hover:bg-neutral"
-                }`}
+              className={`btn btn-sm md:btn-md font-bold transition-all uppercase tracking-wider text-xs md:text-sm border-0 ${
+                selectedCategory === category.id
+                  ? "bg-primary text-primary-content shadow-[0_0_15px_rgba(255,140,0,0.4)]"
+                  : "bg-base-200 text-base-content/70 hover:text-neutral-content hover:bg-neutral"
+              }`}
             >
               {category.name}
             </button>
@@ -173,12 +185,36 @@ const Home = () => {
                   key={product.id}
                   className="card bg-base-200 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden group"
                 >
-                  <figure className="h-56 overflow-hidden bg-neutral relative relative">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100"
-                    />
+                  <figure className="h-56 overflow-hidden bg-neutral relative flex items-center justify-center">
+                    {/* Placeholder hasta que se suban imágenes desde el panel de administración */}
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-neutral/80 group-hover:bg-neutral transition-colors duration-500">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-14 h-14 text-neutral-content/25 group-hover:text-neutral-content/40 transition-colors duration-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth="1"
+                      >
+                        <rect
+                          x="3"
+                          y="3"
+                          width="18"
+                          height="18"
+                          rx="2"
+                          strokeWidth="1.5"
+                        />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M21 15l-5-5L5 21"
+                        />
+                      </svg>
+                      <span className="text-neutral-content/30 text-xs font-bold uppercase tracking-widest">
+                        Imagen próximamente
+                      </span>
+                    </div>
                     {/* Stock tag / Alertas */}
                     {product.stockLimitado && (
                       <div className="absolute top-3 right-3 badge badge-error font-bold text-white border-0 shadow-lg tracking-wide uppercase text-[10px]">
@@ -220,13 +256,29 @@ const Home = () => {
                       </div>
                     )}
 
-                    <div className="card-actions justify-between items-end mt-auto pt-6">
+                    <div className="card-actions justify-between items-center mt-auto pt-6">
                       <span className="text-2xl font-black text-base-content">
-                        ${product.price}
+                        {formatPrice(product.price)}
                       </span>
-                      <button className="btn bg-primary hover:bg-neutral text-primary-content font-black uppercase text-sm border-0 px-6 hover:shadow-lg transition-all rounded-sm w-full sm:w-auto">
-                        Comprar
-                      </button>
+                      {product.stockLimitado ? (
+                        <span className="btn btn-disabled font-black uppercase text-sm border-0 px-6 rounded-sm w-full sm:w-auto bg-base-300 text-base-content/40 cursor-not-allowed">
+                          Sin stock
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleAddToCart(product.id)}
+                          disabled={addedIds.includes(product.id)}
+                          className={`btn font-black uppercase text-sm border-0 px-6 transition-all duration-300 rounded-sm w-full sm:w-auto ${
+                            addedIds.includes(product.id)
+                              ? "bg-success text-success-content cursor-default scale-95"
+                              : "bg-primary hover:bg-neutral text-primary-content hover:shadow-lg"
+                          }`}
+                        >
+                          {addedIds.includes(product.id)
+                            ? "¡Agregado ✓"
+                            : "Agregar al carrito"}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -242,59 +294,21 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Qué estás buscando */}
-      <section className="bg-base-100 p-8 md:p-12 mt-12 border-t border-neutral/20 text-center">
-        <h2 className="text-2xl md:text-3xl font-black text-primary dark:text-[#ff6b6b] mb-10 uppercase tracking-tighter">
-          ¿Qué estás buscando?
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 max-w-4xl mx-auto">
-          <div>
-            <h3 className="text-lg font-black text-base-content uppercase tracking-widest mb-4">Femenino</h3>
-            <ul className="space-y-3 text-sm font-bold text-base-content/60 uppercase tracking-widest">
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Remeras</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Pantalones</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Gorras</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Zapatillas</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Bolsos</a></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-lg font-black text-base-content uppercase tracking-widest mb-4">Masculino</h3>
-            <ul className="space-y-3 text-sm font-bold text-base-content/60 uppercase tracking-widest">
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Remeras</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Pantalones</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Buzos</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Zapatillas</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Camisas</a></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-lg font-black text-base-content uppercase tracking-widest mb-4">Unisex</h3>
-            <ul className="space-y-3 text-sm font-bold text-base-content/60 uppercase tracking-widest">
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Medias</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Skates</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Gorras</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Accesorios</a></li>
-              <li><a href="#" className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors">Lijas</a></li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
       {/* Newsletter Section */}
-      <section className="bg-base-200 p-10 md:p-16 flex flex-col items-center justify-center text-center space-y-6 -mx-2 sm:-mx-4 md:-mx-6 mb-[-2.5rem]">
+      <section className="bg-base-200 p-10 md:p-16 flex flex-col items-center justify-center text-center space-y-6 -mx-2 sm:-mx-4 md:-mx-6">
         <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-primary dark:text-[#ff6b6b]">
           Mantenete al día
         </h2>
         <p className="text-lg text-base-content/70 max-w-2xl">
-          Recibe las últimas novedades, colecciones exclusivas y notificaciones sobre nuevos lanzamientos de Crumbskate.
+          Recibe las últimas novedades, colecciones exclusivas y notificaciones
+          sobre nuevos lanzamientos de Crumbskate.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xl mt-6">
           <input
             type="email"
             placeholder="Introduce tu email..."
-            className="input input-bordered input-lg flex-1 bg-base-100 text-base-content placeholder-neutral-content border-neutral focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+            className="input input-bordered input-lg flex-1 bg-white dark:bg-base-100 text-neutral dark:text-base-content placeholder:text-neutral/40 dark:placeholder:text-neutral-content border-neutral/40 focus:border-primary focus:ring-1 focus:ring-primary transition-all"
           />
           <button className="btn btn-lg bg-primary hover:bg-neutral text-primary-content font-black uppercase tracking-wider border-0 shadow-lg rounded-sm">
             Suscribirse
@@ -302,10 +316,154 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Footer Info */}
-      <section className="text-center space-y-2 py-8 mt-12 bg-primary text-primary-content -mx-2 sm:-mx-4 md:-mx-6 relative z-10 mb-[-2.5rem]">
-        <p className="text-xl font-black tracking-widest uppercase">Crumbskate</p>
-        <p className="text-sm font-bold opacity-80">Cultura Skater Argentina &copy; 2026</p>
+      {/* Qué estás buscando */}
+      <section className="bg-base-100 p-8 md:p-12 border-t border-neutral/20 text-center">
+        <h2 className="text-2xl md:text-3xl font-black text-primary dark:text-[#ff6b6b] mb-10 uppercase tracking-tighter">
+          ¿Qué estás buscando?
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 max-w-4xl mx-auto">
+          <div>
+            <h3 className="text-lg font-black text-base-content uppercase tracking-widest mb-4">
+              Femenino
+            </h3>
+            <ul className="space-y-3 text-sm font-bold text-base-content/60 uppercase tracking-widest">
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Remeras
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Pantalones
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Gorras
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Zapatillas
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Bolsos
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-lg font-black text-base-content uppercase tracking-widest mb-4">
+              Masculino
+            </h3>
+            <ul className="space-y-3 text-sm font-bold text-base-content/60 uppercase tracking-widest">
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Remeras
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Pantalones
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Buzos
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Zapatillas
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Camisas
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-lg font-black text-base-content uppercase tracking-widest mb-4">
+              Unisex
+            </h3>
+            <ul className="space-y-3 text-sm font-bold text-base-content/60 uppercase tracking-widest">
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Medias
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Skates
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Gorras
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Accesorios
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                >
+                  Lijas
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
       </section>
     </div>
   );
