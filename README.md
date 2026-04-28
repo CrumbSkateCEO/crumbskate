@@ -9,9 +9,8 @@ Los pagos se procesan a través de Mercado Libre.
 
 | Integrante | Rol |
 |---|---|
-| Fernando Flor | Líder + Backend |
-| Juan Carlos | Frontend |
-| Santiago | Base de datos |
+| Fernando Flor | Líder + Backend + Frontend|
+| Santiago | Base de datos + Backend |
 | Liz | Diseño + Documentación |
 
 ---
