@@ -15,7 +15,7 @@ const searchSuggestions = [
   { type: "categoria", name: "Accesorios", category: "Ver todo" },
 ];
 
-const Navbar = () => {
+const Navbar = ({ children }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -47,7 +47,7 @@ const Navbar = () => {
         checked={drawerOpen}
         onChange={() => setDrawerOpen(!drawerOpen)}
       />
-      <div className="drawer-content">
+      <div className="drawer-content flex flex-col min-h-screen">
         <header className="sticky top-0 z-50 w-full">
           <nav className="navbar bg-base-200 shadow-sm w-full mb-0 px-4 sm:px-6 md:px-8">
             {/* Mobile: Logo + Buscador + Menu */}
@@ -129,8 +129,8 @@ const Navbar = () => {
               </div>
             </div>
 
-            {/* Desktop: Logo a la izquierda */}
-            <div className="navbar-start hidden lg:flex items-center">
+            {/* Desktop: Logo + buscador a la izquierda */}
+            <div className="navbar-start hidden lg:flex items-center gap-4 flex-1 min-w-0">
               <Link
                 to="/"
                 className="flex items-center justify-center hover:scale-105 transition-transform origin-center shrink-0"
@@ -141,11 +141,7 @@ const Navbar = () => {
                   className="h-12 w-12 object-contain"
                 />
               </Link>
-            </div>
-
-            {/* Desktop: Buscador centrado */}
-            <div className="navbar-center hidden lg:flex flex-1 px-4">
-              <div className="relative w-full max-w-lg" ref={searchRef}>
+              <div className="relative w-full max-w-2xl" ref={searchRef}>
                 <input
                   type="text"
                   placeholder="Buscar productos, categorías o marcas..."
@@ -242,6 +238,9 @@ const Navbar = () => {
             </div>
           </nav>
         </header>
+        <div className="flex-1 flex flex-col">
+          {children}
+        </div>
       </div>
 
       {/* Drawer lateral para móvil */}

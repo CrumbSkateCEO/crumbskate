@@ -1,4 +1,35 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!email || !password) {
+      setError("Por favor completa todos los campos");
+      return;
+    }
+
+    const result = login(email, password);
+    if (result.success) {
+      if (result.user.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
+    } else {
+      setError("Credenciales invalidas");
+    }
+  };
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-16 px-4">
       <div className="w-full max-w-md">
@@ -10,7 +41,7 @@ const Login = () => {
           <div className="bg-primary px-8 py-6 transform -skew-y-1">
             <div className="transform skew-y-1">
               <h1 className="text-3xl font-black text-primary-content uppercase tracking-tight">
-                Iniciar Sesión
+                Iniciar Sesion
               </h1>
               <p className="text-primary-content/70 text-sm font-semibold mt-1">
                 Bienvenido de vuelta a Crumbskate
@@ -19,7 +50,13 @@ const Login = () => {
           </div>
 
           {/* Form */}
-          <form className="p-8 space-y-5" onSubmit={(e) => e.preventDefault()}>
+          <form className="p-8 space-y-5" onSubmit={handleSubmit}>
+            {error && (
+              <div className="bg-error/10 border border-error/20 p-3 rounded-lg text-error text-xs font-bold uppercase tracking-tight text-center">
+                {error}
+              </div>
+            )}
+
             <div className="form-control gap-1">
               <label className="label py-0">
                 <span className="label-text font-bold uppercase tracking-widest text-xs text-base-content/70">
@@ -31,6 +68,8 @@ const Login = () => {
                 type="email"
                 placeholder="tu@email.com"
                 autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="input input-bordered bg-base-100 border-neutral/50 focus:border-primary transition-all w-full"
               />
             </div>
@@ -46,6 +85,8 @@ const Login = () => {
                 type="password"
                 placeholder="••••••••"
                 autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="input input-bordered bg-base-100 border-neutral/50 focus:border-primary transition-all w-full"
               />
               <label className="label py-0 mt-1">
@@ -67,7 +108,7 @@ const Login = () => {
             </button>
 
             <div className="divider text-base-content/30 text-xs font-bold uppercase tracking-widest">
-              ¿No tenés cuenta?
+              ¿No tenes cuenta?
             </div>
 
             <a
@@ -82,7 +123,7 @@ const Login = () => {
         {/* Back link */}
         <p className="text-center mt-6 text-base-content/40 text-xs font-bold uppercase tracking-widest">
           <a href="/" className="hover:text-primary transition-colors">
-            ← Volver al inicio
+            Volver al inicio
           </a>
         </p>
       </div>
@@ -91,3 +132,4 @@ const Login = () => {
 };
 
 export default Login;
+

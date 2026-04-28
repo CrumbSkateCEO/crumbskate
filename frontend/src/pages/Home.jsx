@@ -1,78 +1,19 @@
 import { useState } from "react";
-
-const formatPrice = (n) =>
-  new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(n);
+import { useNavigate } from "react-router-dom";
+import ProductCard from "../components/ProductCard";
+import { useCart } from "../context/CartContext";
+import { useProducts } from "../context/ProductContext";
+import { categories } from "../data/products";
 
 const Home = () => {
+  const { products } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState("todos");
-  const [addedIds, setAddedIds] = useState([]);
+  const { addToCart, cartItems } = useCart();
+  const navigate = useNavigate();
 
-  const handleAddToCart = (id) => {
-    setAddedIds((prev) => [...prev, id]);
-    setTimeout(() => setAddedIds((prev) => prev.filter((x) => x !== id)), 1800);
+  const handleAddToCart = (product) => {
+    addToCart(product);
   };
-
-  // Mock de productos - Ropa y accesorios skater
-  const products = [
-    {
-      id: 1,
-      name: "Remera Crumb Classic",
-      price: 1299,
-      category: "remeras",
-      sizes: ["XS", "S", "M", "L", "XL", "XXL"],
-    },
-    {
-      id: 2,
-      name: "Buzo Crumbskate Gris",
-      price: 2499,
-      category: "buzos",
-      sizes: ["S", "M", "L", "XL"],
-    },
-    {
-      id: 3,
-      name: "Gorra Crumb Skate",
-      price: 899,
-      category: "gorras",
-      stockInfo: "¡Últimas unidades!",
-    },
-    { id: 4, name: "Medias Estampadas", price: 349, category: "medias" },
-    { id: 5, name: "Bolso Crumbskate Negro", price: 1899, category: "bolsos" },
-    {
-      id: 6,
-      name: "Accesorios Skater Pack",
-      price: 599,
-      category: "accesorios",
-      stockLimitado: true,
-    },
-    {
-      id: 7,
-      name: "Remera Thrasher Style",
-      price: 1399,
-      category: "remeras",
-      sizes: ["XS", "S", "M", "L", "XL", "XXL"],
-    },
-    {
-      id: 8,
-      name: "Buzo Santa Cruz",
-      price: 2699,
-      category: "buzos",
-      sizes: ["S", "M", "L", "XL"],
-    },
-  ];
-
-  const categories = [
-    { id: "todos", name: "Todos" },
-    { id: "remeras", name: "Remeras" },
-    { id: "buzos", name: "Buzos" },
-    { id: "gorras", name: "Gorras" },
-    { id: "medias", name: "Medias" },
-    { id: "bolsos", name: "Bolsos" },
-    { id: "accesorios", name: "Accesorios" },
-  ];
 
   const filteredProducts =
     selectedCategory === "todos"
@@ -80,7 +21,7 @@ const Home = () => {
       : products.filter((p) => p.category === selectedCategory);
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 select-none cursor-default">
       {/* Hero Section */}
       <section className="hero bg-base-200 min-h-[500px] overflow-hidden relative w-screen ml-[calc(50%-50vw)] py-20 flex flex-col items-center justify-center">
         {/* Decoraciones de fondo */}
@@ -181,107 +122,12 @@ const Home = () => {
           {filteredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredProducts.map((product) => (
-                <div
+                <ProductCard
                   key={product.id}
-                  className="card bg-base-200 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden group"
-                >
-                  <figure className="h-56 overflow-hidden bg-neutral relative flex items-center justify-center">
-                    {/* Placeholder hasta que se suban imágenes desde el panel de administración */}
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-neutral/80 group-hover:bg-neutral transition-colors duration-500">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-14 h-14 text-neutral-content/25 group-hover:text-neutral-content/40 transition-colors duration-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth="1"
-                      >
-                        <rect
-                          x="3"
-                          y="3"
-                          width="18"
-                          height="18"
-                          rx="2"
-                          strokeWidth="1.5"
-                        />
-                        <circle cx="8.5" cy="8.5" r="1.5" />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M21 15l-5-5L5 21"
-                        />
-                      </svg>
-                      <span className="text-neutral-content/30 text-xs font-bold uppercase tracking-widest">
-                        Imagen próximamente
-                      </span>
-                    </div>
-                    {/* Stock tag / Alertas */}
-                    {product.stockLimitado && (
-                      <div className="absolute top-3 right-3 badge badge-error font-bold text-white border-0 shadow-lg tracking-wide uppercase text-[10px]">
-                        Sin Stock
-                      </div>
-                    )}
-                    {product.stockInfo && !product.stockLimitado && (
-                      <div className="absolute top-3 right-3 badge badge-error font-bold text-white border-0 shadow-lg tracking-wide uppercase text-[10px]">
-                        {product.stockInfo}
-                      </div>
-                    )}
-                  </figure>
-                  <div className="card-body p-6">
-                    <div className="flex justify-between items-start gap-2">
-                      <h3 className="card-title text-xl text-base-content font-bold leading-tight">
-                        {product.name}
-                      </h3>
-                    </div>
-
-                    <p className="text-base-content/70 text-sm uppercase font-semibold tracking-wider mt-1">
-                      {product.category}
-                    </p>
-
-                    {product.sizes && (
-                      <div className="mt-4 pt-4 border-t border-neutral/30">
-                        <span className="text-xs font-bold text-base-content/70 uppercase tracking-wider block mb-2">
-                          Talles:
-                        </span>
-                        <div className="flex flex-wrap gap-2">
-                          {product.sizes.map((size) => (
-                            <span
-                              key={size}
-                              className="bg-neutral text-neutral-content text-xs font-bold px-2 py-1 rounded"
-                            >
-                              {size}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="card-actions justify-between items-center mt-auto pt-6">
-                      <span className="text-2xl font-black text-base-content">
-                        {formatPrice(product.price)}
-                      </span>
-                      {product.stockLimitado ? (
-                        <span className="btn btn-disabled font-black uppercase text-sm border-0 px-6 rounded-sm w-full sm:w-auto bg-base-300 text-base-content/40 cursor-not-allowed">
-                          Sin stock
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleAddToCart(product.id)}
-                          disabled={addedIds.includes(product.id)}
-                          className={`btn font-black uppercase text-sm border-0 px-6 transition-all duration-300 rounded-sm w-full sm:w-auto ${
-                            addedIds.includes(product.id)
-                              ? "bg-success text-success-content cursor-default scale-95"
-                              : "bg-primary hover:bg-neutral text-primary-content hover:shadow-lg"
-                          }`}
-                        >
-                          {addedIds.includes(product.id)
-                            ? "¡Agregado ✓"
-                            : "Agregar al carrito"}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  product={product}
+                  onAddToCart={handleAddToCart}
+                  isAdded={cartItems.some(item => item.id === product.id)}
+                />
               ))}
             </div>
           ) : (
