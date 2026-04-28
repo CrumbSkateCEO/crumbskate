@@ -40,7 +40,11 @@ npm run dev               # Corre en http://localhost:3000
 
 ### 2. Frontend
 
-Abrir `frontend/index.html` con Live Server en VS Code.
+```bash
+cd backend
+npm install
+npm run dev               # Corre en http://localhost:5173/
+```
 
 ### 3. Base de datos
 
