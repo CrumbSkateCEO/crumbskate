@@ -1,4 +1,40 @@
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+
 const Registro = () => {
+  const [nombre, setNombre] = useState("");
+  const [apellido, setApellido] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const { register } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!nombre || !apellido || !email || !password) {
+      setError("Por favor completa todos los campos.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+
+    const nombreCompleto = `${nombre} ${apellido}`;
+    const result = await register({ nombre: nombreCompleto, email, password });
+
+    if (result.success) {
+      navigate("/");
+    } else {
+      setError(result.error || "Error al crear la cuenta.");
+    }
+  };
+
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-16 px-4">
       <div className="w-full max-w-md">
@@ -19,7 +55,12 @@ const Registro = () => {
           </div>
 
           {/* Form */}
-          <form className="p-8 space-y-5" onSubmit={(e) => e.preventDefault()}>
+          <form className="p-8 space-y-5" onSubmit={handleSubmit}>
+            {error && (
+              <div className="bg-error/10 border border-error/20 p-3 rounded-lg text-error text-xs font-bold uppercase tracking-tight text-center">
+                {error}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="form-control gap-1">
@@ -33,6 +74,8 @@ const Registro = () => {
                   type="text"
                   placeholder="Juan"
                   autoComplete="given-name"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
                   className="input input-bordered bg-base-100 border-neutral/50 focus:border-primary transition-all w-full"
                 />
               </div>
@@ -47,6 +90,8 @@ const Registro = () => {
                   type="text"
                   placeholder="García"
                   autoComplete="family-name"
+                  value={apellido}
+                  onChange={(e) => setApellido(e.target.value)}
                   className="input input-bordered bg-base-100 border-neutral/50 focus:border-primary transition-all w-full"
                 />
               </div>
@@ -63,6 +108,8 @@ const Registro = () => {
                 type="email"
                 placeholder="tu@email.com"
                 autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="input input-bordered bg-base-100 border-neutral/50 focus:border-primary transition-all w-full"
               />
             </div>
@@ -78,6 +125,8 @@ const Registro = () => {
                 type="password"
                 placeholder="Mínimo 8 caracteres"
                 autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="input input-bordered bg-base-100 border-neutral/50 focus:border-primary transition-all w-full"
               />
             </div>
@@ -93,6 +142,8 @@ const Registro = () => {
                 type="password"
                 placeholder="Repetí la contraseña"
                 autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="input input-bordered bg-base-100 border-neutral/50 focus:border-primary transition-all w-full"
               />
             </div>

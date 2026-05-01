@@ -1,46 +1,71 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import api from "../services/api";
 
 const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem("crumbskate_user");
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      localStorage.setItem("crumbskate_user", JSON.stringify(user));
-    } else {
-      localStorage.removeItem("crumbskate_user");
-    }
-  }, [user]);
+    const initAuth = async () => {
+      const token = localStorage.getItem("crumbskate_token");
+      if (token) {
+        try {
+          const { data } = await api.get("/auth/perfil");
+          setUser(data);
+        } catch (error) {
+          console.error("Error validando token:", error);
+          localStorage.removeItem("crumbskate_token");
+        }
+      }
+      setLoading(false);
+    };
 
-  const login = (email, password) => {
-    // Admin check
-    if (email === "user@root.crumb" && password === "amigotenesmiga") {
-      const adminUser = { email, role: "admin", name: "Admin Crumbskate" };
-      setUser(adminUser);
-      return { success: true, user: adminUser };
+    initAuth();
+  }, []);
+
+  const login = async (email, password) => {
+    try {
+      const { data } = await api.post("/auth/login", { email, password });
+      localStorage.setItem("crumbskate_token", data.token);
+      setUser(data.usuario);
+      return { success: true, user: data.usuario };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.error || "Error al iniciar sesión" 
+      };
     }
-    
-    // Default user mock
-    const regularUser = { email, role: "user", name: email.split('@')[0] };
-    setUser(regularUser);
-    return { success: true, user: regularUser };
+  };
+
+  const register = async (userData) => {
+    try {
+      const { data } = await api.post("/auth/registro", userData);
+      localStorage.setItem("crumbskate_token", data.token);
+      setUser(data.usuario);
+      return { success: true, user: data.usuario };
+    } catch (error) {
+       return { 
+        success: false, 
+        error: error.response?.data?.errors?.[0]?.msg || error.response?.data?.error || "Error al registrarse" 
+      };
+    }
   };
 
   const logout = () => {
+    localStorage.removeItem("crumbskate_token");
     setUser(null);
   };
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.rol === "admin";
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAdmin }}>
-      {children}
+    <AuthContext.Provider value={{ user, loading, login, register, logout, isAdmin }}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
+

@@ -61,7 +61,6 @@ const UserDropDown = () => {
               <li><Link to="/admin" className="text-primary font-black uppercase text-xs" onClick={() => setOpen(false)}>Panel de Admin</Link></li>
             )}
             <li><Link to="/perfil" className="font-bold uppercase text-xs" onClick={() => setOpen(false)}>Mi Perfil</Link></li>
-            <li><Link to="/pedidos" className="font-bold uppercase text-xs" onClick={() => setOpen(false)}>Mis Pedidos</Link></li>
             <li className="mt-1 border-t border-neutral/20 pt-1">
               <button className="text-error font-black uppercase text-xs" onClick={handleLogout}>
                 Cerrar Sesion
