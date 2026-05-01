@@ -9,10 +9,9 @@ Los pagos se procesan a través de Mercado Libre.
 
 | Integrante | Rol |
 |---|---|
-| Fernando Flor | Líder + Backend |
-| Juan Carlos | Frontend |
-| Santiago | Base de datos |
-| Liz | Diseño + Documentación |
+| Fernando Flor | Líder + Backend + Frontend|
+| Santiago Medina | Base de datos + Backend |
+| Liz Benitez | Diseño + Documentación |
 
 ---
 
@@ -20,10 +19,10 @@ Los pagos se procesan a través de Mercado Libre.
 
 ```
 crumbskate/
-├── backend/          → API Node.js + Express (Fernando Flor)
-├── frontend/         → HTML + CSS + JS (Juan Carlos)
-├── database/         → Scripts SQL (Santiago)
-└── docs/             → Documentación (Liz)
+├── backend/          → API Node.js + Express (Fernando Flor y Santiago Medina)
+├── frontend/         → React + Vite (Fernando Flor
+├── database/         → Scripts SQL (Santiago Medina)
+└── docs/             → Documentación (Liz Benitez) 
 ```
 
 ---
@@ -41,7 +40,11 @@ npm run dev               # Corre en http://localhost:3000
 
 ### 2. Frontend
 
-Abrir `frontend/index.html` con Live Server en VS Code.
+```bash
+cd backend
+npm install
+npm run dev               # Corre en http://localhost:5173/
+```
 
 ### 3. Base de datos
 
