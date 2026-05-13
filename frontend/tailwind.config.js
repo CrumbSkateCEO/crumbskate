@@ -14,9 +14,53 @@ export default {
           textSecondary: "#A0A0A0",
           error: "#FF3B30",
         },
+        urban: {
+          dark: "#1a1a1a",
+          mid: "#252525",
+          concrete: "#2a2a2a",
+        },
       },
       fontFamily: {
         sans: ["Inter", "sans-serif"],
+        impact: ['"Anton"', "Impact", '"Arial Black"', "sans-serif"],
+        mono: ['"Roboto Mono"', "monospace"],
+      },
+      boxShadow: {
+        brutal: "8px 8px 0px 0px rgba(0,0,0,1)",
+        "brutal-sm": "4px 4px 0px 0px rgba(0,0,0,1)",
+        "brutal-neon": "8px 8px 0px 0px #8B1A1A",
+        "brutal-orange": "8px 8px 0px 0px #7A1616",
+      },
+      borderWidth: {
+        brutal: "4px",
+      },
+      animation: {
+        marquee: "marquee 20s linear infinite",
+        "marquee-reverse": "marquee-reverse 20s linear infinite",
+        glitch: "glitch 0.3s ease-in-out",
+        "pulse-neon": "pulse-neon 2s ease-in-out infinite",
+      },
+      keyframes: {
+        marquee: {
+          "0%": { transform: "translateX(0%)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+        "marquee-reverse": {
+          "0%": { transform: "translateX(-50%)" },
+          "100%": { transform: "translateX(0%)" },
+        },
+        glitch: {
+          "0%": { transform: "translate(0)" },
+          "20%": { transform: "translate(-3px, 3px)" },
+          "40%": { transform: "translate(-3px, -3px)" },
+          "60%": { transform: "translate(3px, 3px)" },
+          "80%": { transform: "translate(3px, -3px)" },
+          "100%": { transform: "translate(0)" },
+        },
+        "pulse-neon": {
+          "0%, 100%": { boxShadow: "0 0 5px #8B1A1A, 0 0 10px #8B1A1A" },
+          "50%": { boxShadow: "0 0 20px #8B1A1A, 0 0 40px #8B1A1A" },
+        },
       },
     },
   },
@@ -29,7 +73,7 @@ export default {
           "base-200": "#F5F0F0",
           "base-300": "#EAE0E0",
           "base-content": "#1A1111",
-          primary: "#8B1A1A", 
+          primary: "#8B1A1A",
           "primary-content": "#FFFFFF",
           accent: "#7A1616",
           "accent-content": "#FFFFFF",
