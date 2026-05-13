@@ -25,12 +25,16 @@ const UserDropDown = () => {
       <div
         tabIndex={0}
         role="button"
-        className={`btn btn-ghost ${user ? 'text-primary' : ''}`}
+        className={`btn btn-ghost btn-circle text-base-content hover:bg-primary/10 ${user ? "text-base-content" : ""}`}
         onClick={toggle}
         onKeyDown={(e) => e.key === "Enter" && toggle()}
       >
         <div className="flex items-center gap-2">
-          {user && <span className="text-[10px] font-black uppercase tracking-widest hidden md:block">{user.nombre}</span>}
+          {user && (
+            <span className="text-[10px] font-impact uppercase tracking-[0.2em] hidden md:block text-base-content">
+              {user.nombre}
+            </span>
+          )}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -47,22 +51,45 @@ const UserDropDown = () => {
         </div>
       </div>
 
-      {open && (
-        user ? (
+      {open &&
+        (user ? (
           <ul
             tabIndex={0}
-            className="dropdown-content z-50 menu p-2 shadow-xl bg-base-200 rounded-box w-52 border border-neutral/20"
+            className="dropdown-content z-50 menu p-2 bg-base-200 border-4 border-black shadow-brutal w-56"
           >
-            <li className="px-4 py-2 border-b border-neutral/10">
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-40 leading-none">Conectado como</p>
-              <p className="text-xs font-black uppercase truncate">{user.email}</p>
+            <li className="px-4 py-2 border-b-2 border-base-300">
+              <p className="text-[10px] font-impact uppercase tracking-[0.2em] text-base-content/40 leading-none">
+                Conectado como
+              </p>
+              <p className="text-xs font-mono font-bold uppercase truncate text-base-content">
+                {user.email}
+              </p>
             </li>
             {isAdmin && (
-              <li><Link to="/admin" className="text-primary font-black uppercase text-xs" onClick={() => setOpen(false)}>Panel de Admin</Link></li>
+              <li>
+                <Link
+                  to="/admin"
+                  className="text-warning font-impact uppercase text-xs tracking-wider hover:bg-primary/10 rounded-none"
+                  onClick={() => setOpen(false)}
+                >
+                  Panel de Admin
+                </Link>
+              </li>
             )}
-            <li><Link to="/perfil" className="font-bold uppercase text-xs" onClick={() => setOpen(false)}>Mi Perfil</Link></li>
-            <li className="mt-1 border-t border-neutral/20 pt-1">
-              <button className="text-error font-black uppercase text-xs" onClick={handleLogout}>
+            <li>
+              <Link
+                to="/perfil"
+                className="font-impact uppercase text-xs tracking-wider text-base-content hover:bg-primary/10 rounded-none"
+                onClick={() => setOpen(false)}
+              >
+                Mi Perfil
+              </Link>
+            </li>
+            <li className="mt-1 border-t-2 border-base-300 pt-1">
+              <button
+                className="text-error font-impact uppercase text-xs tracking-wider hover:bg-error/10 rounded-none"
+                onClick={handleLogout}
+              >
                 Cerrar Sesion
               </button>
             </li>
@@ -70,21 +97,28 @@ const UserDropDown = () => {
         ) : (
           <ul
             tabIndex={0}
-            className="dropdown-content z-50 menu p-2 shadow-xl bg-base-200 rounded-box w-52 border border-neutral/20"
+            className="dropdown-content z-50 menu p-2 bg-base-200 border-4 border-black shadow-brutal w-56"
           >
             <li>
-              <Link to="/login" onClick={() => setOpen(false)} className="font-black uppercase text-xs">
+              <Link
+                to="/login"
+                onClick={() => setOpen(false)}
+                className="font-impact uppercase text-xs tracking-wider text-base-content hover:bg-primary/10 rounded-none"
+              >
                 Iniciar Sesion
               </Link>
             </li>
             <li>
-              <Link to="/registro" onClick={() => setOpen(false)} className="font-black uppercase text-xs">
+              <Link
+                to="/registro"
+                onClick={() => setOpen(false)}
+                className="font-impact uppercase text-xs tracking-wider text-base-content hover:bg-primary/10 rounded-none"
+              >
                 Registrarse
               </Link>
             </li>
           </ul>
-        )
-      )}
+        ))}
     </div>
   );
 };

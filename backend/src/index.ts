@@ -1,6 +1,8 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import pool from './config/db';
 
 // Import Routes
@@ -18,8 +20,21 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middlewares
-app.use(cors());
+// Middlewares de Seguridad
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true,
+};
+app.use(cors(corsOptions));
+app.use(helmet()); // Añade cabeceras HTTP de seguridad
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // Límite de 100 peticiones por IP cada 15 min
+  message: 'Demasiadas peticiones desde esta IP, por favor intenta de nuevo en 15 minutos.'
+});
+app.use('/api/', limiter); // Aplica el límite a todas las rutas de la API
+
 app.use(express.json());
 
 // 1. Health check route

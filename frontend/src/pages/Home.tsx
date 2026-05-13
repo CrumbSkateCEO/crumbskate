@@ -1,15 +1,24 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 
 import ProductCard from "../components/ProductCard";
 import { useCart } from "../context/CartContext";
 import { useProducts } from "../context/ProductContext";
 import { categories } from "../data/products";
 
+const sectionReveal = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" as const },
+  },
+};
+
 const Home = () => {
   const { products } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const { addToCart, cartItems } = useCart();
-
 
   const handleAddToCart = (product: any) => {
     addToCart(product);
@@ -21,25 +30,45 @@ const Home = () => {
       : products.filter((p) => p.category === selectedCategory);
 
   return (
-    <div className="space-y-12 select-none cursor-default">
+    <div className="space-y-0 select-none cursor-default">
       {/* Hero Section */}
-      <section className="hero bg-base-200 min-h-[500px] overflow-hidden relative w-screen ml-[calc(50%-50vw)] py-20 flex flex-col items-center justify-center">
-        {/* Decoraciones de fondo */}
+      <section className="bg-base-300 overflow-hidden relative w-screen ml-[calc(50%-50vw)] border-b-4 border-black">
+        {/* Scanline overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.06]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(139,26,26,0.15) 3px, rgba(139,26,26,0.15) 6px)",
+          }}
+        />
 
-        {/* Bola 8 */}
-        <div className="absolute top-12 left-6 md:top-24 md:left-24 w-28 h-28 md:w-40 md:h-40 bg-neutral rounded-full flex items-center justify-center shadow-xl transform -rotate-12 hover:scale-110 transition-transform duration-500 z-0 opacity-90 border-4 border-neutral-content/10">
-          <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-full flex items-center justify-center">
-            <span className="text-neutral text-5xl md:text-6xl font-black">
+        {/* Desktop decorative elements — hidden on mobile */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5, rotate: -30 }}
+          animate={{ opacity: 0.15, scale: 1, rotate: -12 }}
+          transition={{ duration: 0.8, type: "spring", stiffness: 150 }}
+          className="hidden md:flex absolute top-16 left-12 lg:left-24 w-32 lg:w-40 h-32 lg:h-40 bg-black border-4 border-primary items-center justify-center shadow-brutal z-0"
+        >
+          <div className="w-16 lg:w-20 h-16 lg:h-20 bg-primary flex items-center justify-center">
+            <span className="text-primary-content text-4xl lg:text-6xl font-impact">
               8
             </span>
           </div>
-        </div>
+        </motion.div>
 
-        {/* T-Shirt SVG Replacing Image - Bottom Right */}
-        <div className="absolute bottom-12 right-6 md:bottom-24 md:right-24 w-32 h-32 md:w-48 md:h-48 bg-base-100 rounded-xl shadow-xl transform rotate-6 hover:-rotate-3 hover:scale-110 transition-all duration-500 z-0 p-4 md:p-6 border-4 border-base-300 text-primary flex items-center justify-center group overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-0"></div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5, rotate: 20 }}
+          animate={{ opacity: 0.15, scale: 1, rotate: 6 }}
+          transition={{
+            duration: 0.8,
+            delay: 0.2,
+            type: "spring",
+            stiffness: 150,
+          }}
+          className="hidden md:flex absolute bottom-16 right-12 lg:right-24 w-32 lg:w-44 h-32 lg:h-44 bg-base-200 border-4 border-primary shadow-brutal z-0 p-5 text-base-content items-center justify-center"
+        >
           <svg
-            className="w-full h-full drop-shadow-md group-hover:drop-shadow-[0_0_15px_rgba(255,140,0,0.5)] transition-all z-10"
+            className="w-full h-full"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
             fill="currentColor"
@@ -47,136 +76,206 @@ const Home = () => {
           >
             <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
           </svg>
-        </div>
+        </motion.div>
 
-        <div className="relative z-10 w-full flex justify-center mt-[-2rem]">
-          <div className="bg-primary text-primary-content py-10 px-10 md:py-16 md:px-32 transform -skew-x-12 shadow-2xl relative w-full max-w-4xl flex items-center justify-center border-b-8 border-primary/50">
-            <div className="transform skew-x-12 flex flex-col items-center gap-3">
-              <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter uppercase whitespace-nowrap drop-shadow-lg">
-                Crumb Skate!
+        {/* Main hero content */}
+        <div className="relative z-10 flex flex-col items-center px-4 py-10 sm:py-16 md:py-24 lg:py-28">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-primary text-primary-content py-6 px-6 sm:py-10 sm:px-14 md:py-14 md:px-28 md:-skew-x-6 relative w-full max-w-3xl lg:max-w-4xl border-4 border-black shadow-brutal"
+          >
+            <div className="md:skew-x-6 flex flex-col items-center text-center gap-3 sm:gap-4">
+              <p className="font-mono text-[9px] sm:text-[10px] md:text-xs tracking-[0.3em] sm:tracking-[0.5em] uppercase opacity-60">
+                Cultura Urbana Argentina
+              </p>
+              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-impact tracking-[0.05em] sm:tracking-[0.1em] uppercase leading-[0.9]">
+                CRUMB
+                <br className="sm:hidden" /> SKATE!
               </h1>
+              <p className="font-mono text-[10px] sm:text-xs md:text-sm text-primary-content/70 max-w-lg tracking-wider leading-relaxed mt-1">
+                Ropa, zapatillas y accesorios de skate. Diseños exclusivos con
+                envío a todo el país.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3 w-full sm:w-auto">
+                <a
+                  href="#catalogo"
+                  className="bg-black text-white font-impact uppercase tracking-[0.2em] px-8 py-3 text-xs border-2 border-black hover:bg-white hover:text-black transition-all text-center"
+                >
+                  Ver catálogo
+                </a>
+                <a
+                  href="#newsletter"
+                  className="bg-transparent text-primary-content font-impact uppercase tracking-[0.2em] px-8 py-3 text-xs border-2 border-primary-content/40 hover:bg-primary-content/10 transition-all text-center"
+                >
+                  Novedades
+                </a>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </motion.div>
 
-      {/* Quick Info */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-base-200 p-8 rounded-xl text-center shadow-lg hover:shadow-xl transition-all border border-neutral/50">
-          <p className="text-lg font-bold text-base-content">
-            100% Indumentaria Skater
-          </p>
-          <p className="text-sm text-base-content/70 mt-2">
-            Diseños exclusivos y durabilidad
-          </p>
-        </div>
-        <div className="bg-base-200 p-8 rounded-xl text-center shadow-lg hover:shadow-xl transition-all border border-neutral/50">
-          <p className="text-lg font-bold text-base-content">Compra Segura</p>
-          <p className="text-sm text-base-content/70 mt-2">
-            Transacciones vía Mercado Libre
-          </p>
-        </div>
-        <div className="bg-base-200 p-8 rounded-xl text-center shadow-lg hover:shadow-xl transition-all border border-neutral/50">
-          <p className="text-lg font-bold text-base-content">
-            Envíos a todo el país
-          </p>
-          <p className="text-sm text-base-content/70 mt-2">
-            Llegamos a cada rincón de Argentina
-          </p>
+          {/* Quick info badges */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+            className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6 sm:mt-8 md:mt-10 max-w-3xl"
+          >
+            {[
+              { icon: "✦", text: "Indumentaria 100% Skater" },
+              { icon: "✦", text: "Compra Segura vía MercadoLibre" },
+              { icon: "✦", text: "Envíos a todo el país" },
+            ].map((item, i) => (
+              <span
+                key={i}
+                className="flex items-center gap-1.5 bg-base-200 border-2 border-black px-3 py-1.5 md:px-4 md:py-2 text-[10px] sm:text-xs font-mono font-bold text-base-content uppercase tracking-wider hover:bg-primary hover:text-primary-content hover:border-black transition-all cursor-default"
+              >
+                <span className="text-primary group-hover:text-primary-content">
+                  {item.icon}
+                </span>
+                {item.text}
+              </span>
+            ))}
+          </motion.div>
         </div>
       </section>
 
       {/* Categories Section */}
-      <section className="space-y-6">
+      <motion.section
+        variants={sectionReveal}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.3 }}
+        className="space-y-6 pt-12"
+        id="catalogo"
+      >
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl md:text-4xl font-black text-base-content uppercase tracking-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-impact text-base-content uppercase tracking-[0.1em] sm:tracking-[0.2em]">
             Categorías
           </h2>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           {categories.map((category) => (
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={`btn btn-sm md:btn-md font-bold transition-all uppercase tracking-wider text-xs md:text-sm border-0 ${
+              className={`px-3 py-2 sm:px-4 md:px-6 md:py-3 font-impact transition-all uppercase tracking-[0.1em] sm:tracking-[0.15em] text-[11px] sm:text-xs md:text-sm border-2 border-black rounded-none ${
                 selectedCategory === category.id
-                  ? "bg-primary text-primary-content shadow-[0_0_15px_rgba(255,140,0,0.4)]"
-                  : "bg-base-200 text-base-content/70 hover:text-neutral-content hover:bg-neutral"
+                  ? "bg-primary text-primary-content shadow-brutal-sm"
+                  : "bg-base-200 text-base-content/70 hover:text-primary-content hover:bg-primary"
               }`}
             >
               {category.name}
             </button>
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* Featured Products */}
-      <section className="space-y-4">
-        <h2 className="text-2xl md:text-3xl font-black text-primary dark:text-[#ff6b6b] uppercase tracking-tighter border-b-2 border-primary dark:border-[#ff6b6b] pb-2 inline-block">
+      <motion.section
+        variants={sectionReveal}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.1 }}
+        className="space-y-4 pt-8"
+      >
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-impact text-base-content uppercase tracking-[0.1em] sm:tracking-[0.2em] border-b-4 border-primary pb-2 inline-block">
           {selectedCategory === "todos"
             ? "Catálogo Completo"
             : `${categories.find((c) => c.id === selectedCategory)?.name}`.toUpperCase()}
         </h2>
 
-        <div className="-mx-2 sm:-mx-4 md:-mx-6 bg-primary py-10 px-4 sm:px-8 md:px-12 relative shadow-inner">
+        <div className="-mx-4 sm:-mx-4 md:-mx-6 bg-base-300 py-6 sm:py-10 px-3 sm:px-8 md:px-12 relative border-y-4 border-black">
+          {/* Diagonal stripes background */}
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(139,26,26,0.2) 10px, rgba(139,26,26,0.2) 12px)",
+            }}
+          />
+
           {filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 md:gap-8 relative z-10">
               {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
                   onAddToCart={handleAddToCart}
-                  isAdded={cartItems.some(item => item.id === product.id)}
+                  isAdded={cartItems.some((item) => item.id === product.id)}
                 />
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 bg-base-100 rounded-xl shadow-lg">
-              <p className="text-xl font-bold text-base-content/70">
+            <div className="text-center py-16 bg-base-200 border-4 border-black shadow-brutal relative z-10">
+              <p className="text-xl font-impact text-base-content/70 tracking-wider uppercase">
                 No hay productos en esta categoría
               </p>
             </div>
           )}
         </div>
-      </section>
+      </motion.section>
 
       {/* Newsletter Section */}
-      <section className="bg-base-200 p-10 md:p-16 flex flex-col items-center justify-center text-center space-y-6 -mx-2 sm:-mx-4 md:-mx-6">
-        <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-primary dark:text-[#ff6b6b]">
-          Mantenete al día
-        </h2>
-        <p className="text-lg text-base-content/70 max-w-2xl">
-          Recibe las últimas novedades, colecciones exclusivas y notificaciones
-          sobre nuevos lanzamientos de Crumbskate.
-        </p>
+      <motion.section
+        variants={sectionReveal}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.3 }}
+        className="bg-base-200 p-6 sm:p-10 md:p-16 flex flex-col items-center justify-center text-center space-y-4 sm:space-y-6 -mx-4 sm:-mx-4 md:-mx-6 border-y-4 border-primary relative overflow-hidden"
+        id="newsletter"
+      >
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(139,26,26,0.3) 10px, rgba(139,26,26,0.3) 12px)",
+          }}
+        />
+        <div className="relative z-10 flex flex-col items-center space-y-6">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-impact uppercase tracking-[0.15em] sm:tracking-[0.3em] text-base-content">
+            Mantenete al día
+          </h2>
+          <p className="text-sm font-mono text-base-content/50 max-w-2xl tracking-wider">
+            Recibe las últimas novedades, colecciones exclusivas y
+            notificaciones sobre nuevos lanzamientos de Crumbskate.
+          </p>
 
-        <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xl mt-6">
-          <input
-            type="email"
-            placeholder="Introduce tu email..."
-            className="input input-bordered input-lg flex-1 bg-white dark:bg-base-100 text-neutral dark:text-base-content placeholder:text-neutral/40 dark:placeholder:text-neutral-content border-neutral/40 focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-          />
-          <button className="btn btn-lg bg-primary hover:bg-neutral text-primary-content font-black uppercase tracking-wider border-0 shadow-lg rounded-sm">
-            Suscribirse
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xl mt-6">
+            <input
+              type="email"
+              placeholder="TU@EMAIL.COM"
+              className="flex-1 bg-base-300 border-2 border-primary/30 focus:border-primary text-base-content placeholder:text-base-content/20 px-4 py-3 rounded-none font-mono text-sm tracking-wider transition-all outline-none"
+            />
+            <button className="bg-primary text-primary-content font-impact uppercase tracking-[0.2em] px-8 py-3 border-2 border-black shadow-brutal hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all text-sm">
+              Suscribirse
+            </button>
+          </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Qué estás buscando */}
-      <section className="bg-base-100 p-8 md:p-12 border-t border-neutral/20 text-center">
-        <h2 className="text-2xl md:text-3xl font-black text-primary dark:text-[#ff6b6b] mb-10 uppercase tracking-tighter">
+      <motion.section
+        variants={sectionReveal}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.3 }}
+        className="bg-base-300 p-6 sm:p-8 md:p-12 border-t-4 border-black text-center -mx-4 sm:-mx-4 md:-mx-6"
+      >
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-impact text-base-content mb-6 sm:mb-10 uppercase tracking-[0.15em] sm:tracking-[0.3em]">
           ¿Qué estás buscando?
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 max-w-4xl mx-auto">
           <div>
-            <h3 className="text-lg font-black text-base-content uppercase tracking-widest mb-4">
+            <h3 className="text-lg font-impact text-warning uppercase tracking-[0.3em] mb-4">
               Femenino
             </h3>
-            <ul className="space-y-3 text-sm font-bold text-base-content/60 uppercase tracking-widest">
+            <ul className="space-y-3 text-xs font-mono font-bold text-base-content/40 uppercase tracking-[0.3em]">
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Remeras
                 </a>
@@ -184,7 +283,7 @@ const Home = () => {
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Pantalones
                 </a>
@@ -192,7 +291,7 @@ const Home = () => {
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Gorras
                 </a>
@@ -200,7 +299,7 @@ const Home = () => {
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Zapatillas
                 </a>
@@ -208,7 +307,7 @@ const Home = () => {
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Bolsos
                 </a>
@@ -216,14 +315,14 @@ const Home = () => {
             </ul>
           </div>
           <div>
-            <h3 className="text-lg font-black text-base-content uppercase tracking-widest mb-4">
+            <h3 className="text-lg font-impact text-warning uppercase tracking-[0.3em] mb-4">
               Masculino
             </h3>
-            <ul className="space-y-3 text-sm font-bold text-base-content/60 uppercase tracking-widest">
+            <ul className="space-y-3 text-xs font-mono font-bold text-base-content/40 uppercase tracking-[0.3em]">
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Remeras
                 </a>
@@ -231,7 +330,7 @@ const Home = () => {
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Pantalones
                 </a>
@@ -239,7 +338,7 @@ const Home = () => {
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Buzos
                 </a>
@@ -247,7 +346,7 @@ const Home = () => {
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Zapatillas
                 </a>
@@ -255,7 +354,7 @@ const Home = () => {
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Camisas
                 </a>
@@ -263,14 +362,14 @@ const Home = () => {
             </ul>
           </div>
           <div>
-            <h3 className="text-lg font-black text-base-content uppercase tracking-widest mb-4">
+            <h3 className="text-lg font-impact text-warning uppercase tracking-[0.3em] mb-4">
               Unisex
             </h3>
-            <ul className="space-y-3 text-sm font-bold text-base-content/60 uppercase tracking-widest">
+            <ul className="space-y-3 text-xs font-mono font-bold text-base-content/40 uppercase tracking-[0.3em]">
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Medias
                 </a>
@@ -278,7 +377,7 @@ const Home = () => {
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Skates
                 </a>
@@ -286,7 +385,7 @@ const Home = () => {
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Gorras
                 </a>
@@ -294,7 +393,7 @@ const Home = () => {
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Accesorios
                 </a>
@@ -302,7 +401,7 @@ const Home = () => {
               <li>
                 <a
                   href="#"
-                  className="hover:text-primary dark:hover:text-[#ff6b6b] transition-colors"
+                  className="hover:text-base-content transition-colors"
                 >
                   Lijas
                 </a>
@@ -310,7 +409,7 @@ const Home = () => {
             </ul>
           </div>
         </div>
-      </section>
+      </motion.section>
     </div>
   );
 };

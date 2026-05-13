@@ -31,3 +31,140 @@ select {
     fill 0.3s ease,
     stroke 0.3s ease !important;
 }
+
+/* ========== URBAN AESTHETIC - GRAIN TEXTURE ========== */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* ========== BRUTALIST SCROLLBAR ========== */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #1a1111;
+}
+::-webkit-scrollbar-thumb {
+  background: #8b1a1a;
+  border: 2px solid #1a1111;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #7a1616;
+}
+
+/* ========== CAUTION TAPE MARQUEE ========== */
+@keyframes caution-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+.caution-marquee {
+  display: flex;
+  white-space: nowrap;
+  animation: caution-scroll 15s linear infinite;
+}
+.caution-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* ========== GLITCH HOVER EFFECT ========== */
+.glitch-hover:hover {
+  animation: glitch-img 0.3s steps(2) both;
+}
+@keyframes glitch-img {
+  0% {
+    clip-path: inset(0 0 0 0);
+    filter: hue-rotate(0deg);
+  }
+  20% {
+    clip-path: inset(10% 0 60% 0);
+    filter: hue-rotate(90deg) saturate(2);
+    transform: translate(-4px, 2px);
+  }
+  40% {
+    clip-path: inset(50% 0 10% 0);
+    filter: hue-rotate(180deg) saturate(3);
+    transform: translate(4px, -2px);
+  }
+  60% {
+    clip-path: inset(20% 0 40% 0);
+    filter: hue-rotate(270deg) saturate(2);
+    transform: translate(-2px, 4px);
+  }
+  80% {
+    clip-path: inset(60% 0 5% 0);
+    filter: hue-rotate(360deg) saturate(1.5);
+    transform: translate(2px, -4px);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    filter: hue-rotate(0deg);
+    transform: translate(0);
+  }
+}
+
+/* ========== STICKER EFFECT ========== */
+.sticker {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 20;
+  transform: rotate(12deg);
+  font-family: "Anton", Impact, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0px 0px rgba(0, 0, 0, 1);
+  line-height: 1;
+}
+
+/* ========== CONCRETE TEXTURE BG ========== */
+.bg-concrete {
+  background-color: #1a1a1a;
+  background-image:
+    radial-gradient(
+      ellipse at 20% 50%,
+      rgba(255, 255, 255, 0.03) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 80% 20%,
+      rgba(255, 255, 255, 0.02) 0%,
+      transparent 50%
+    ),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+}
+
+/* ========== SMOOTH SCROLL ========== */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ========== BRUTALIST GLOBAL BORDER STYLE ========== */
+@layer utilities {
+  .border-brutal {
+    border: 4px solid #000;
+  }
+  .shadow-brutal {
+    box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
+  }
+  .shadow-brutal-sm {
+    box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  }
+}
