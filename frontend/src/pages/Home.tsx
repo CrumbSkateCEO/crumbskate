@@ -18,16 +18,24 @@ const sectionReveal = {
 const Home = () => {
   const { products } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState("todos");
+  const [selectedGender, setSelectedGender] = useState("todos");
   const { addToCart, cartItems } = useCart();
 
   const handleAddToCart = (product: any) => {
     addToCart(product);
   };
 
-  const filteredProducts =
-    selectedCategory === "todos"
-      ? products
-      : products.filter((p) => p.category === selectedCategory);
+  const handleCategoryClick = (categoryId: string, genderId: string = "todos") => {
+    setSelectedCategory(categoryId);
+    setSelectedGender(genderId);
+    document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const filteredProducts = products.filter((p) => {
+    const matchCategory = selectedCategory === "todos" || p.category === selectedCategory;
+    const matchGender = selectedGender === "todos" || p.gender === selectedGender;
+    return matchCategory && matchGender;
+  });
 
   return (
     <div className="space-y-0 select-none cursor-default">
@@ -92,7 +100,7 @@ const Home = () => {
               </p>
               <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-impact tracking-[0.05em] sm:tracking-[0.1em] uppercase leading-[0.9]">
                 CRUMB
-                <br className="sm:hidden" /> SKATE!
+                <br className="sm:hidden" /> SKATE
               </h1>
               <p className="font-mono text-[10px] sm:text-xs md:text-sm text-primary-content/70 max-w-lg tracking-wider leading-relaxed mt-1">
                 Ropa, zapatillas y accesorios de skate. Diseños exclusivos con
@@ -159,9 +167,9 @@ const Home = () => {
           {categories.map((category) => (
             <button
               key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
+              onClick={() => { setSelectedCategory(category.id); setSelectedGender("todos"); }}
               className={`px-3 py-2 sm:px-4 md:px-6 md:py-3 font-impact transition-all uppercase tracking-[0.1em] sm:tracking-[0.15em] text-[11px] sm:text-xs md:text-sm border-2 border-black rounded-none ${
-                selectedCategory === category.id
+                selectedCategory === category.id && selectedGender === "todos"
                   ? "bg-primary text-primary-content shadow-brutal-sm"
                   : "bg-base-200 text-base-content/70 hover:text-primary-content hover:bg-primary"
               }`}
@@ -268,143 +276,88 @@ const Home = () => {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 max-w-4xl mx-auto">
           <div>
-            <h3 className="text-lg font-impact text-warning uppercase tracking-[0.3em] mb-4">
+            <h3 className="text-lg font-impact text-primary uppercase tracking-[0.3em] mb-4">
               Femenino
             </h3>
             <ul className="space-y-3 text-xs font-mono font-bold text-base-content/40 uppercase tracking-[0.3em]">
               <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
+                <button onClick={() => handleCategoryClick("remeras", "femenino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
                   Remeras
-                </a>
+                </button>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
+                <button onClick={() => handleCategoryClick("pantalones", "femenino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
                   Pantalones
-                </a>
+                </button>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
+                <button onClick={() => handleCategoryClick("gorras", "femenino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
                   Gorras
-                </a>
+                </button>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
+                <button onClick={() => handleCategoryClick("zapatillas", "femenino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
                   Zapatillas
-                </a>
+                </button>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
+                <button onClick={() => handleCategoryClick("bolsos", "femenino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
                   Bolsos
-                </a>
+                </button>
               </li>
             </ul>
           </div>
           <div>
-            <h3 className="text-lg font-impact text-warning uppercase tracking-[0.3em] mb-4">
+            <h3 className="text-lg font-impact text-primary uppercase tracking-[0.3em] mb-4">
               Masculino
             </h3>
             <ul className="space-y-3 text-xs font-mono font-bold text-base-content/40 uppercase tracking-[0.3em]">
               <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
+                <button onClick={() => handleCategoryClick("remeras", "masculino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
                   Remeras
-                </a>
+                </button>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
+                <button onClick={() => handleCategoryClick("pantalones", "masculino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
                   Pantalones
-                </a>
+                </button>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
+                <button onClick={() => handleCategoryClick("buzos", "masculino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
                   Buzos
-                </a>
+                </button>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
+                <button onClick={() => handleCategoryClick("zapatillas", "masculino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
                   Zapatillas
-                </a>
+                </button>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
+                <button onClick={() => handleCategoryClick("camisas", "masculino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
                   Camisas
-                </a>
+                </button>
               </li>
             </ul>
           </div>
           <div>
-            <h3 className="text-lg font-impact text-warning uppercase tracking-[0.3em] mb-4">
+            <h3 className="text-lg font-impact text-primary uppercase tracking-[0.3em] mb-4">
               Unisex
             </h3>
             <ul className="space-y-3 text-xs font-mono font-bold text-base-content/40 uppercase tracking-[0.3em]">
               <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
+                <button onClick={() => handleCategoryClick("medias", "unisex")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
                   Medias
-                </a>
+                </button>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
-                  Skates
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
+                <button onClick={() => handleCategoryClick("gorras", "unisex")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
                   Gorras
-                </a>
+                </button>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
+                <button onClick={() => handleCategoryClick("accesorios", "unisex")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
                   Accesorios
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="hover:text-base-content transition-colors"
-                >
-                  Lijas
-                </a>
+                </button>
               </li>
             </ul>
           </div>

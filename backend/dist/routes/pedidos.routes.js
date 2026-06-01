@@ -7,5 +7,6 @@ const router = (0, express_1.Router)();
 router.use(auth_1.verificarToken);
 router.post('/', pedidos_controller_1.crear);
 router.get('/', pedidos_controller_1.historial);
+router.get('/todos', auth_1.soloAdmin, pedidos_controller_1.todos);
 router.get('/:id', pedidos_controller_1.detalle);
 exports.default = router;

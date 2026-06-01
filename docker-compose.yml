@@ -1,0 +1,115 @@
+version: "3.9"
+
+services:
+  # ============ BASE DE DATOS ============
+  db:
+    image: mariadb:10.11-alpine
+    container_name: crumbskate-db
+    restart: unless-stopped
+    networks:
+      - crumbskate-network
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-crumbskate}
+      MYSQL_USER: ${MYSQL_USER:-crumbskate_admin}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-tu_password}
+      MYSQL_INITDB_SKIP_TZINFO: 1
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    ulimits:
+      nofile: 65536
+      nproc: 65536
+
+  # ============ BACKEND (API) ============
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: ${NODE_ENV:-production}
+    container_name: crumbskate-backend
+    restart: unless-stopped
+    networks:
+      - crumbskate-network
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${BACKEND_PORT:-5000}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: ${MYSQL_USER:-crumbskate_admin}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-tu_password}
+      DB_NAME: ${MYSQL_DATABASE:-crumbskate}
+      JWT_SECRET: ${JWT_SECRET:-crumbskate_secret_key_2024_change_this_in_production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+    ports:
+      - "${BACKEND_PORT:-5000}:${BACKEND_PORT:-5000}"
+    volumes:
+      - backend_uploads:/app/uploads
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:${BACKEND_PORT:-5000}/api/health",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ============ FRONTEND ============
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
+        NODE_ENV: ${NODE_ENV:-production}
+    container_name: crumbskate-frontend
+    restart: unless-stopped
+    networks:
+      - crumbskate-network
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:80/",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  db_data:
+    driver: local
+  backend_uploads:
+    driver: local
+
+networks:
+  crumbskate-network:
+    driver: bridge

@@ -132,3 +132,67 @@ export async function detalle(req: Request, res: Response, next: NextFunction) {
     next(err);
   }
 }
+
+// GET /api/pedidos/todos  - todos los pedidos (solo admin)
+export async function todos(req: Request, res: Response, next: NextFunction) {
+  try {
+    const [pedidos] = await pool.query(
+      `SELECT p.id, p.estado, p.total, p.created_at, u.nombre as cliente, u.email
+       FROM pedidos p
+       JOIN usuarios u ON p.usuario_id = u.id
+       ORDER BY p.created_at DESC`
+    );
+    res.json(pedidos);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// PUT /api/pedidos/:id/cancelar
+export async function cancelar(req: Request, res: Response, next: NextFunction) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const [pedidos]: any = await conn.query(
+      'SELECT estado FROM pedidos WHERE id = ? AND usuario_id = ? FOR UPDATE',
+      [req.params.id, req.usuario?.id]
+    );
+
+    if (pedidos.length === 0) {
+      await conn.rollback();
+      return res.status(404).json({ error: 'Pedido no encontrado.' });
+    }
+
+    if (pedidos[0].estado !== 'pendiente') {
+      await conn.rollback();
+      return res.status(400).json({ error: 'Solo se pueden cancelar pedidos pendientes.' });
+    }
+
+    await conn.query(
+      "UPDATE pedidos SET estado = 'cancelado' WHERE id = ?",
+      [req.params.id]
+    );
+
+    // Devolver el stock
+    const [items]: any = await conn.query(
+      'SELECT variante_id, cantidad FROM pedido_items WHERE pedido_id = ?',
+      [req.params.id]
+    );
+
+    for (const item of items) {
+      await conn.query(
+        'UPDATE variantes SET stock = stock + ? WHERE id = ?',
+        [item.cantidad, item.variante_id]
+      );
+    }
+
+    await conn.commit();
+    res.json({ message: 'Pedido cancelado exitosamente.' });
+  } catch (err) {
+    await conn.rollback();
+    next(err);
+  } finally {
+    conn.release();
+  }
+}

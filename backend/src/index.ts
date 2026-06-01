@@ -11,6 +11,13 @@ import carritoRoutes from './routes/carrito.routes';
 import categoriasRoutes from './routes/categorias.routes';
 import pedidosRoutes from './routes/pedidos.routes';
 import productosRoutes from './routes/productos.routes';
+import dashboardRoutes from './routes/dashboard.routes';
+import cuponesRoutes from './routes/cupones.routes';
+import resenasRoutes from './routes/resenas.routes';
+import configuracionRoutes from './routes/configuracion.routes';
+import usuariosRoutes from './routes/usuarios.routes';
+import stockRoutes from './routes/stock.routes';
+import reportesRoutes from './routes/reportes.routes';
 
 // Import Error Handler
 import errorHandler from './middlewares/errorHandler';
@@ -26,7 +33,9 @@ const corsOptions = {
   credentials: true,
 };
 app.use(cors(corsOptions));
-app.use(helmet()); // Añade cabeceras HTTP de seguridad
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+})); // Añade cabeceras HTTP de seguridad pero permite cargar imágenes en el frontend
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
@@ -35,7 +44,18 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter); // Aplica el límite a todas las rutas de la API
 
+import path from 'path';
+
 app.use(express.json());
+app.use('/', express.static(path.join(__dirname, '../uploads'), {
+  setHeaders: (res, filePath) => {
+    // Si el archivo no tiene extensión, forzamos un Content-Type de imagen
+    // para que el navegador lo interprete correctamente a pesar del header "nosniff"
+    if (!filePath.includes('.')) {
+      res.set('Content-Type', 'image/jpeg');
+    }
+  }
+}));
 
 // 1. Health check route
 app.get('/api/health', async (req: Request, res: Response) => {
@@ -61,6 +81,13 @@ app.use('/api/carrito', carritoRoutes);
 app.use('/api/categorias', categoriasRoutes);
 app.use('/api/pedidos', pedidosRoutes);
 app.use('/api/productos', productosRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/cupones', cuponesRoutes);
+app.use('/api/resenas', resenasRoutes);
+app.use('/api/configuracion', configuracionRoutes);
+app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/stock', stockRoutes);
+app.use('/api/reportes', reportesRoutes);
 
 // Manejo centralizado de errores (debe ser el último middleware)
 app.use(errorHandler);

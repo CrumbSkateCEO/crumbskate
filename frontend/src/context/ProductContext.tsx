@@ -29,16 +29,26 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data } = await api.get("/productos");
       // Mapear los datos del backend al formato que espera el frontend
-      const mappedProducts = data.map((p: any) => ({
-        id: p.id,
-        name: p.nombre,
-        description: p.descripcion,
-        price: Number(p.precio_base),
-        image: p.imagen_url,
-        category: p.categoria,
-        categoria_id: p.categoria_id, // guardamos el id por si acaso
-        inStock: true // asumimos stock por defecto a menos que checkeemos variantes
-      }));
+      const mappedProducts = data.map((p: any) => {
+        const sizes = p.variantes ? p.variantes.map((v: any) => v.talla) : undefined;
+        // remove duplicate sizes
+        const uniqueSizes = sizes ? [...new Set(sizes)] : undefined;
+        const totalStock = p.variantes ? p.variantes.reduce((sum: number, v: any) => sum + v.stock, 0) : 1;
+        return {
+          id: p.id,
+          name: p.nombre,
+          description: p.descripcion,
+          price: Number(p.precio_base),
+          image: p.imagen_url,
+          category: p.categoria,
+          categoria_id: p.categoria_id,
+          gender: p.genero,
+          sizes: uniqueSizes,
+          variants: p.variantes,
+          inStock: totalStock > 0,
+          createdAt: p.created_at
+        };
+      });
       setProducts(mappedProducts);
     } catch (error) {
       console.error("Error cargando productos:", error);
@@ -53,17 +63,25 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
 
   const addProduct = async (product: any) => {
     try {
-      // Necesitamos mapear de vuelta al backend
-      const { data } = await api.post("/productos", {
-        nombre: product.name,
-        descripcion: product.description,
-        precio_base: product.price,
-        imagen_url: product.image,
-        categoria_id: product.category === 'remeras' ? 1 : 2, // Hardcodeado por ahora para evitar problemas de ID vs string, mejor pasar el ID real desde el form
-        // Faltaria codigo_sku y marca
-        codigo_sku: `SKU-${Date.now()}`,
-        marca: 'Crumbskate'
-      });
+      const formData = new FormData();
+      formData.append('nombre', product.name);
+      formData.append('descripcion', product.description);
+      formData.append('precio_base', product.price);
+      formData.append('categoria_id', product.category); // Now directly the ID from DB
+      formData.append('codigo_sku', `SKU-${Date.now()}`);
+      formData.append('marca', 'Crumbskate');
+      formData.append('genero', product.gender || 'unisex');
+      if (product.variants) {
+        formData.append('variantes', JSON.stringify(product.variants));
+      }
+      
+      if (product.image instanceof File) {
+        formData.append('image', product.image);
+      } else if (product.image) {
+        formData.append('imagen_url', product.image);
+      }
+
+      const { data } = await api.post("/productos", formData);
       fetchProducts(); // Recargar la lista
       return { success: true, id: data.id };
     } catch (error) {
@@ -74,13 +92,24 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
 
   const updateProduct = async (id: string | number, updatedFields: any) => {
     try {
-      await api.put(`/productos/${id}`, {
-        nombre: updatedFields.name,
-        descripcion: updatedFields.description,
-        precio_base: updatedFields.price,
-        imagen_url: updatedFields.image,
-        activo: updatedFields.inStock ? 1 : 0
-      });
+      const formData = new FormData();
+      formData.append('nombre', updatedFields.name);
+      formData.append('descripcion', updatedFields.description);
+      formData.append('precio_base', updatedFields.price);
+      formData.append('activo', '1');
+      formData.append('categoria_id', updatedFields.category);
+      formData.append('genero', updatedFields.gender || 'unisex');
+      if (updatedFields.variants) {
+        formData.append('variantes', JSON.stringify(updatedFields.variants));
+      }
+
+      if (updatedFields.image instanceof File) {
+        formData.append('image', updatedFields.image);
+      } else if (updatedFields.image) {
+        formData.append('imagen_url', updatedFields.image);
+      }
+
+      await api.put(`/productos/${id}`, formData);
       fetchProducts();
       return { success: true };
     } catch (error) {

@@ -3,6 +3,3 @@ dist
 npm-debug.log
 .env
 .git
-.gitignore
-README.md
-old_js_backend_backup

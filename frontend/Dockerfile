@@ -1,30 +1,35 @@
-# Etapa 1 (Builder): Construcción de la aplicación
+# --- Stage 1: Build ---
 FROM node:20-alpine AS builder
+
 WORKDIR /app
 
-# Copiar archivos de dependencias
-COPY package.json package-lock.json* ./
+# Copy package files
+COPY package*.json ./
 
-# Instalar dependencias
+# Install dependencies
 RUN npm install
 
-# Copiar el resto del código del proyecto
+# Copy the rest of the application code
 COPY . .
 
-# Construir la aplicación para producción
+# Build argument for API URL (se inyecta en build time)
+ARG VITE_API_URL=http://localhost:5000/api
+
+# Build the Vite app
 RUN npm run build
 
-# Etapa 2 (Producción): Servir con Nginx
-FROM nginx:alpine
+# --- Stage 2: Serve with Nginx ---
+FROM nginx:alpine AS production
 
-# Copiar la configuración de Nginx creada en el paso 2
+# Remove default nginx config
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Copy our nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copiar los archivos compilados de la Etapa 1 a la carpeta estática de Nginx
+# Copy built assets from builder
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Exponer el puerto 80 del contenedor
 EXPOSE 80
 
-# Iniciar Nginx
 CMD ["nginx", "-g", "daemon off;"]

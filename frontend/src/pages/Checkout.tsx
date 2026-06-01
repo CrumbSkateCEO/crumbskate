@@ -3,12 +3,14 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { useConfig } from "../context/ConfigContext";
 import api from "../services/api";
 
 const Checkout = () => {
   const { cartItems, refreshCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { config } = useConfig();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -25,7 +27,10 @@ const Checkout = () => {
     (acc, item) => acc + item.price * item.quantity,
     0,
   );
-  const shipping = subtotal > 5000 ? 0 : 450;
+  
+  const threshold = Number(config.envio_gratis_desde) || 50000;
+  const shippingCost = Number(config.costo_envio) || 5000;
+  const shipping = subtotal >= threshold ? 0 : shippingCost;
   const total = subtotal + (cartItems.length > 0 ? shipping : 0);
 
   const formatPrice = (n: number) =>
@@ -117,7 +122,7 @@ const Checkout = () => {
             </h2>
 
             {error && (
-              <div className="bg-error/10 border-2 border-error p-4 text-warning mb-6 font-impact text-sm uppercase tracking-wider">
+              <div className="bg-error/10 border-2 border-error p-4 text-error mb-6 font-impact text-sm uppercase tracking-wider">
                 {error}
               </div>
             )}

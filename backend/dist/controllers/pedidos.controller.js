@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.crear = crear;
 exports.historial = historial;
 exports.detalle = detalle;
+exports.todos = todos;
 const db_1 = __importDefault(require("../config/db"));
 // POST /api/pedidos  - crea un pedido desde el carrito
 function crear(req, res, next) {
@@ -109,6 +110,21 @@ function detalle(req, res, next) {
        JOIN productos p ON v.producto_id = p.id
        WHERE pi.pedido_id = ?`, [req.params.id]);
             res.json(Object.assign(Object.assign({}, pedidos[0]), { items }));
+        }
+        catch (err) {
+            next(err);
+        }
+    });
+}
+// GET /api/pedidos/todos  - todos los pedidos (solo admin)
+function todos(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const [pedidos] = yield db_1.default.query(`SELECT p.id, p.estado, p.total, p.created_at, u.nombre as cliente, u.email
+       FROM pedidos p
+       JOIN usuarios u ON p.usuario_id = u.id
+       ORDER BY p.created_at DESC`);
+            res.json(pedidos);
         }
         catch (err) {
             next(err);

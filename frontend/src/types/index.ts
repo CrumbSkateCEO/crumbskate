@@ -5,8 +5,11 @@ export interface Product {
   description?: string;
   image: string;
   category: string;
-  sizes?: string[]; // Para productos como tablas o ropa que tienen tallas
+  gender?: string;
+  sizes?: string[]; 
   stock?: number;
+  inStock?: boolean;
+  createdAt?: string;
 }
 
 export interface CartItem extends Product {
@@ -17,6 +20,7 @@ export interface CartItem extends Product {
 export interface User {
   id: string | number;
   nombre: string;
+  name?: string; 
   email: string;
   rol: 'admin' | 'user';
   createdAt?: string;

@@ -14,6 +14,7 @@ interface ProductCardProps {
   product: Product & {
     oldPrice?: number;
     sizes?: string[];
+    variants?: any[];
     inStock?: boolean;
     stockInfo?: string;
     brand?: string;
@@ -27,7 +28,16 @@ const ProductCard = ({ product, onAddToCart, isAdded }: ProductCardProps) => {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   const hasMultipleSizes =
-    product.sizes && product.sizes.length > 1 && product.sizes[0] !== "Único";
+    product.sizes && (product.sizes.length > 1 || product.sizes[0] !== "Único");
+
+  const isNew = () => {
+    if (!product.createdAt) return false;
+    const createdDate = new Date(product.createdAt);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - createdDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 14;
+  };
 
   const handleSizeClick = (e: React.MouseEvent, size: string) => {
     e.stopPropagation();
@@ -64,7 +74,7 @@ const ProductCard = ({ product, onAddToCart, isAdded }: ProductCardProps) => {
       tabIndex={0}
     >
       {/* STICKER */}
-      {product.inStock !== false && (
+      {product.inStock !== false && (product.stockInfo || isNew()) && (
         <div className="sticker bg-primary text-primary-content">
           {product.stockInfo || "NEW"}
         </div>
@@ -76,9 +86,9 @@ const ProductCard = ({ product, onAddToCart, isAdded }: ProductCardProps) => {
       <figure className="h-44 sm:h-56 overflow-hidden bg-base-300 relative flex items-center justify-center flex-shrink-0">
         {product.image ? (
           <img
-            src={product.image}
+            src={product.image.startsWith('http') ? product.image : `http://localhost:5000${product.image}`}
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 glitch-hover"
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-base-300 group-hover:bg-base-200 transition-colors duration-500">
@@ -145,12 +155,15 @@ const ProductCard = ({ product, onAddToCart, isAdded }: ProductCardProps) => {
             </div>
             <div className="flex flex-wrap gap-2">
               {product.sizes.map((size) => {
+                const variantInfo = product.variants?.find((v: any) => v.talla === size);
+                const isOutOfStock = variantInfo ? variantInfo.stock <= 0 : !product.inStock;
                 const isSelected =
                   selectedSize === size ||
                   (!hasMultipleSizes && size === product.sizes?.[0]);
                 return (
                   <button
                     key={size}
+                    disabled={isOutOfStock}
                     onClick={(e) =>
                       hasMultipleSizes && handleSizeClick(e, size)
                     }
@@ -160,9 +173,14 @@ const ProductCard = ({ product, onAddToCart, isAdded }: ProductCardProps) => {
                         : hasMultipleSizes
                           ? "bg-transparent border-base-300 text-base-content/60 hover:border-primary/50 hover:text-primary"
                           : "bg-base-300/30 border-transparent text-base-content/40 cursor-default"
-                    }`}
+                    } disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-base-300 disabled:hover:text-base-content/60 relative overflow-hidden`}
                   >
                     {size}
+                    {isOutOfStock && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-full h-[2px] bg-error rotate-45 transform origin-center absolute"></div>
+                      </div>
+                    )}
                   </button>
                 );
               })}

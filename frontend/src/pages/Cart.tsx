@@ -2,9 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "../context/CartContext";
+import { useConfig } from "../context/ConfigContext";
+import api from "../services/api";
 
 const Cart = () => {
   const { cartItems, updateQuantity, removeItem } = useCart();
+  const { config } = useConfig();
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [activeDiscount, setActiveDiscount] = useState(0); // 1 = 100% discount
@@ -23,18 +26,30 @@ const Cart = () => {
   );
   const discountAmount = subtotal * activeDiscount;
   const subtotalWithDiscount = subtotal - discountAmount;
+  
+  // Use config or fallbacks
+  const threshold = Number(config.envio_gratis_desde) || 50000;
+  const shippingCost = Number(config.costo_envio) || 5000;
+  
   const shipping =
-    subtotalWithDiscount > 5000 || activeDiscount === 1 ? 0 : 450;
+    subtotalWithDiscount >= threshold || activeDiscount === 1 ? 0 : shippingCost;
   const total = subtotalWithDiscount + (cartItems.length > 0 ? shipping : 0);
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (couponCode.toUpperCase() === "CHIMICHANGA") {
-      setActiveDiscount(1);
-      setCouponError("");
-      setIsCouponModalOpen(false);
-    } else {
-      setCouponError("Cupon invalido");
+    if (!couponCode.trim()) return;
+
+    try {
+      const { data } = await api.post("/cupones/validar", { codigo: couponCode });
+      if (data.valido) {
+        // Assume descuento_porcentaje is e.g. 10 for 10%
+        setActiveDiscount(Number(data.descuento_porcentaje) / 100);
+        setCouponError("");
+        setIsCouponModalOpen(false);
+      }
+    } catch (err: any) {
+      setCouponError(err.response?.data?.error || "Cupón inválido o expirado");
+      setActiveDiscount(0);
     }
   };
 
@@ -148,7 +163,7 @@ const Cart = () => {
                     <div className="flex items-center justify-center md:justify-start gap-4 mt-4">
                       <button
                         onClick={() => removeItem(item.id)}
-                        className="text-xs font-impact text-warning uppercase hover:underline tracking-wider"
+                        className="text-xs font-impact text-error uppercase hover:underline tracking-wider"
                       >
                         Eliminar
                       </button>
@@ -201,7 +216,7 @@ const Cart = () => {
             <div className="p-4 bg-base-300 border-t-2 border-primary/20 flex justify-end">
               <Link
                 to="/"
-                className="text-xs font-impact uppercase text-base-content hover:text-warning tracking-wider"
+                className="text-xs font-impact uppercase text-base-content hover:text-primary tracking-wider"
               >
                 Continuar comprando
               </Link>
@@ -251,7 +266,7 @@ const Cart = () => {
               {shipping > 0 && activeDiscount !== 1 && (
                 <div className="bg-primary/10 p-3 border-2 border-primary/30">
                   <p className="text-[10px] font-impact uppercase text-base-content leading-tight tracking-wider">
-                    Agrega {formatPrice(5000 - subtotalWithDiscount)} mas para
+                    Agrega {formatPrice(threshold - subtotalWithDiscount)} mas para
                     envio gratis
                   </p>
                 </div>
@@ -306,13 +321,13 @@ const Cart = () => {
             </div>
             <div>
               <p className="text-xs font-impact uppercase tracking-[0.2em] text-base-content">
-                {activeDiscount === 1
-                  ? "Cupon aplicado: CHIMICHANGA"
+                {activeDiscount > 0
+                  ? `Cupon aplicado: ${couponCode.toUpperCase()}`
                   : "¿Tenes un cupon?"}
               </p>
               <p className="text-[10px] font-mono font-bold text-base-content/40 uppercase">
-                {activeDiscount === 1
-                  ? "¡Disfruta tu regalo!"
+                {activeDiscount > 0
+                  ? "¡Disfruta tu descuento!"
                   : "Ingresalo haciendo click aqui"}
               </p>
             </div>
@@ -374,10 +389,10 @@ const Cart = () => {
                     placeholder="Ej: CHIMICHANGA"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value)}
-                    className={`w-full bg-base-300 border-2 px-4 py-3 font-impact uppercase placeholder:opacity-30 text-base-content rounded-none tracking-wider outline-none ${couponError ? "border-error text-warning" : "border-primary/30 focus:border-primary"}`}
+                    className={`w-full bg-base-300 border-2 px-4 py-3 font-impact uppercase placeholder:opacity-30 text-base-content rounded-none tracking-wider outline-none ${couponError ? "border-error text-error" : "border-primary/30 focus:border-primary"}`}
                   />
                   {couponError && (
-                    <p className="text-[10px] font-impact text-warning uppercase mt-2 tracking-wider">
+                    <p className="text-[10px] font-impact text-error uppercase mt-2 tracking-wider">
                       {couponError}
                     </p>
                   )}

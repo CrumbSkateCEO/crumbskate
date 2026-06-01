@@ -83,7 +83,9 @@ function crear(req, res, next) {
             if (!errores.isEmpty()) {
                 return res.status(400).json({ errores: errores.array() });
             }
-            const { categoria_id, nombre, descripcion, marca, codigo_sku, precio_base, imagen_url, mercadolibre_url } = req.body;
+            const { categoria_id, nombre, descripcion, marca, codigo_sku, precio_base, mercadolibre_url } = req.body;
+            // Obtener la imagen subida si existe
+            const imagen_url = req.file ? `/uploads/${req.file.filename}` : req.body.imagen_url;
             const [result] = yield db_1.default.query(`INSERT INTO productos
         (categoria_id, nombre, descripcion, marca, codigo_sku, precio_base, imagen_url, mercadolibre_url)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, [categoria_id, nombre, descripcion, marca, codigo_sku,
@@ -103,7 +105,12 @@ function actualizar(req, res, next) {
             if (!errores.isEmpty()) {
                 return res.status(400).json({ errores: errores.array() });
             }
-            const { nombre, descripcion, marca, precio_base, imagen_url, mercadolibre_url, activo } = req.body;
+            const { nombre, descripcion, marca, precio_base, mercadolibre_url, activo } = req.body;
+            // Si se sube un nuevo archivo, actualizar la ruta, si no, mantener la actual si viene en el body
+            let imagen_url = req.body.imagen_url;
+            if (req.file) {
+                imagen_url = `/uploads/${req.file.filename}`;
+            }
             yield db_1.default.query(`UPDATE productos SET
         nombre = COALESCE(?, nombre),
         descripcion = COALESCE(?, descripcion),

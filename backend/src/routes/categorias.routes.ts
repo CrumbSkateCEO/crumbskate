@@ -1,9 +1,11 @@
 import { Router } from 'express';
-import { listar, crear } from '../controllers/categorias.controller';
+import { listar, crear, actualizar, eliminar } from '../controllers/categorias.controller';
 
 const router = Router();
 
 router.get('/', listar);
-router.post('/', crear); // (solo admin) Nota: no hay middleware en la ruta original, se podría agregar
+router.post('/', crear);
+router.put('/:id', actualizar);
+router.delete('/:id', eliminar);
 
 export default router;

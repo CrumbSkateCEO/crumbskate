@@ -58,7 +58,7 @@ const Login = () => {
             onSubmit={handleSubmit}
           >
             {error && (
-              <div className="bg-error/10 border-2 border-error p-3 text-warning text-xs font-impact uppercase tracking-wider text-center">
+              <div className="bg-error/10 border-2 border-error p-3 text-error text-xs font-impact uppercase tracking-wider text-center">
                 {error}
               </div>
             )}
@@ -98,7 +98,7 @@ const Login = () => {
               <label className="label py-0 mt-1">
                 <a
                   href="#"
-                  className="text-warning font-impact hover:underline uppercase tracking-[0.2em] text-[10px]"
+                  className="text-primary font-impact hover:underline uppercase tracking-[0.2em] text-[10px]"
                 >
                   ¿Olvidaste tu contraseña?
                 </a>

@@ -15,6 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const helmet_1 = __importDefault(require("helmet"));
+const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const db_1 = __importDefault(require("./config/db"));
 // Import Routes
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
@@ -22,14 +24,34 @@ const carrito_routes_1 = __importDefault(require("./routes/carrito.routes"));
 const categorias_routes_1 = __importDefault(require("./routes/categorias.routes"));
 const pedidos_routes_1 = __importDefault(require("./routes/pedidos.routes"));
 const productos_routes_1 = __importDefault(require("./routes/productos.routes"));
+const dashboard_routes_1 = __importDefault(require("./routes/dashboard.routes"));
+const cupones_routes_1 = __importDefault(require("./routes/cupones.routes"));
+const resenas_routes_1 = __importDefault(require("./routes/resenas.routes"));
+const configuracion_routes_1 = __importDefault(require("./routes/configuracion.routes"));
+const usuarios_routes_1 = __importDefault(require("./routes/usuarios.routes"));
+const stock_routes_1 = __importDefault(require("./routes/stock.routes"));
+const reportes_routes_1 = __importDefault(require("./routes/reportes.routes"));
 // Import Error Handler
 const errorHandler_1 = __importDefault(require("./middlewares/errorHandler"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
-// Middlewares
-app.use((0, cors_1.default)());
+// Middlewares de Seguridad
+const corsOptions = {
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    credentials: true,
+};
+app.use((0, cors_1.default)(corsOptions));
+app.use((0, helmet_1.default)()); // Añade cabeceras HTTP de seguridad
+const limiter = (0, express_rate_limit_1.default)({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 100, // Límite de 100 peticiones por IP cada 15 min
+    message: 'Demasiadas peticiones desde esta IP, por favor intenta de nuevo en 15 minutos.'
+});
+app.use('/api/', limiter); // Aplica el límite a todas las rutas de la API
+const path_1 = __importDefault(require("path"));
 app.use(express_1.default.json());
+app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../uploads')));
 // 1. Health check route
 app.get('/api/health', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -54,6 +76,13 @@ app.use('/api/carrito', carrito_routes_1.default);
 app.use('/api/categorias', categorias_routes_1.default);
 app.use('/api/pedidos', pedidos_routes_1.default);
 app.use('/api/productos', productos_routes_1.default);
+app.use('/api/dashboard', dashboard_routes_1.default);
+app.use('/api/cupones', cupones_routes_1.default);
+app.use('/api/resenas', resenas_routes_1.default);
+app.use('/api/configuracion', configuracion_routes_1.default);
+app.use('/api/usuarios', usuarios_routes_1.default);
+app.use('/api/stock', stock_routes_1.default);
+app.use('/api/reportes', reportes_routes_1.default);
 // Manejo centralizado de errores (debe ser el último middleware)
 app.use(errorHandler_1.default);
 // Iniciar servidor

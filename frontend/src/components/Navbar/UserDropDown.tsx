@@ -30,24 +30,26 @@ const UserDropDown = () => {
         onKeyDown={(e) => e.key === "Enter" && toggle()}
       >
         <div className="flex items-center gap-2">
-          {user && (
-            <span className="text-[10px] font-impact uppercase tracking-[0.2em] hidden md:block text-base-content">
-              {user.nombre}
-            </span>
+
+          {user ? (
+            <div className="w-8 h-8 rounded-full bg-primary text-primary-content border-2 border-black flex items-center justify-center font-impact tracking-wider">
+              {user.nombre ? user.nombre.charAt(0).toUpperCase() : (user as any).email?.charAt(0).toUpperCase()}
+            </div>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-5 w-5"
+            >
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
           )}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="h-5 w-5"
-          >
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
         </div>
       </div>
 
@@ -55,13 +57,13 @@ const UserDropDown = () => {
         (user ? (
           <ul
             tabIndex={0}
-            className="dropdown-content z-50 menu p-2 bg-base-200 border-4 border-black shadow-brutal w-56"
+            className="dropdown-content z-50 menu p-2 mt-3 bg-base-200 border-4 border-black shadow-brutal w-56"
           >
-            <li className="px-4 py-2 border-b-2 border-base-300">
+            <li className="px-4 py-2 border-b-2 border-base-300 overflow-hidden w-full max-w-full">
               <p className="text-[10px] font-impact uppercase tracking-[0.2em] text-base-content/40 leading-none">
                 Conectado como
               </p>
-              <p className="text-xs font-mono font-bold uppercase truncate text-base-content">
+              <p className="text-xs font-mono font-bold uppercase text-base-content w-full inline-block overflow-hidden text-ellipsis whitespace-nowrap" title={user.email}>
                 {user.email}
               </p>
             </li>
@@ -97,7 +99,7 @@ const UserDropDown = () => {
         ) : (
           <ul
             tabIndex={0}
-            className="dropdown-content z-50 menu p-2 bg-base-200 border-4 border-black shadow-brutal w-56"
+            className="dropdown-content z-50 menu p-2 mt-3 bg-base-200 border-4 border-black shadow-brutal w-56"
           >
             <li>
               <Link

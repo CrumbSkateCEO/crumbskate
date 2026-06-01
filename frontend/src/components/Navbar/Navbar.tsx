@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import Cart from "./ModalCart";
 import UserDropDown from "./UserDropDown";
 import { useAuth } from "../../context/AuthContext";
+import { useConfig } from "../../context/ConfigContext";
 import logo from "../../assets/logo.svg";
+import ThemeSwitcher from "../ThemeSwitcher/ThemeSwitcher";
 
 // Datos de ejemplo para el dropdown de búsqueda
 const searchSuggestions = [
@@ -16,10 +18,11 @@ const searchSuggestions = [
 ];
 
 const cautionText =
-  "CRUMBSKATE \u26A0 SKATE OR DIE \u26A0 CULTURA URBANA \u26A0 STREET STYLE \u26A0 ";
+  "FERNANDO FLOR \u26A0 SANTIAGO MEDINA \u26A0 LIZ BENITEZ \u26A0 JAVIER ROMERO \u26A0 ";
 
 const Navbar = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
+  const { config } = useConfig();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -331,7 +334,7 @@ const Navbar = ({ children }: { children: ReactNode }) => {
               <div className="flex flex-col items-start gap-1">
                 <span className="text-[10px] font-impact uppercase tracking-widest text-primary">BIENVENIDO</span>
                 <span className="font-impact text-xl tracking-tight uppercase truncate max-w-full text-base-content">
-                  {user.nombre}
+                  {user.nombre || (user as any).name}
                 </span>
               </div>
             </li>

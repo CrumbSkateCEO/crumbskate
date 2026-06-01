@@ -63,7 +63,7 @@ const Registro = () => {
             onSubmit={handleSubmit}
           >
             {error && (
-              <div className="bg-error/10 border-2 border-error p-3 text-warning text-xs font-impact uppercase tracking-wider text-center">
+              <div className="bg-error/10 border-2 border-error p-3 text-error text-xs font-impact uppercase tracking-wider text-center">
                 {error}
               </div>
             )}
