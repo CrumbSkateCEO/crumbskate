@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:latest
+    container_name: crumbskate_db
+    restart: always
+    environment:
+      # Contraseña para el usuario administrador supremo (root)
+      MARIADB_ROOT_PASSWORD: root_password_super_seguro
+      # Crea la base de datos automáticamente
+      MARIADB_DATABASE: crumbskate
+      # Crea tu usuario personalizado
+      MARIADB_USER: crumbskate_admin
+      # Le asigna su contraseña
+      MARIADB_PASSWORD: tu_password
+    ports:
+      - "3306:3306"
+    volumes:
+      # Persistencia de datos
+      - crumbskate_data:/var/lib/mysql
+      # Importación automática del respaldo
+      - ./respaldo.sql:/docker-entrypoint-initdb.d/respaldo.sql
+
+volumes:
+  crumbskate_data:

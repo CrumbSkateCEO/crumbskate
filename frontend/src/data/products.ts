@@ -121,8 +121,6 @@ export const categories = [
   { id: "todos", name: "Todos" },
   { id: "remeras", name: "Remeras" },
   { id: "buzos", name: "Buzos" },
-  { id: "skates", name: "Skates" },
-  { id: "lijas", name: "Lijas" },
   { id: "gorras", name: "Gorras" },
   { id: "medias", name: "Medias" },
   { id: "bolsos", name: "Bolsos" },
