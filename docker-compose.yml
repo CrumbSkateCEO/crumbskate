@@ -1,9 +1,8 @@
-version: "3.9"
 
 services:
   # ============ BASE DE DATOS ============
   db:
-    image: mariadb:10.11-alpine
+    image: mariadb:10.11
     container_name: crumbskate-db
     restart: unless-stopped
     networks:
