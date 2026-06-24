@@ -38,6 +38,7 @@ services:
     container_name: crumbskate-backend
     restart: unless-stopped
     networks:
+    
       - crumbskate-network
     depends_on:
       db:
