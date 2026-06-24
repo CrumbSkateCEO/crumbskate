@@ -97,7 +97,7 @@ const Login = () => {
               />
               <label className="label py-0 mt-1">
                 <a
-                  href="#"
+                  href="/reset-password"
                   className="text-primary font-impact hover:underline uppercase tracking-[0.2em] text-[10px]"
                 >
                   ¿Olvidaste tu contraseña?

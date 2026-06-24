@@ -164,7 +164,7 @@ const Registro = () => {
                 <span className="text-base-content/60 text-xs font-mono">
                   Acepto los{" "}
                   <a
-                    href="#"
+                    href="/terminos"
                     className="text-base-content font-bold hover:underline"
                   >
                     términos y condiciones

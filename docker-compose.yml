@@ -1,3 +1,14 @@
+version: '3.8'
+
+networks:
+  crumbskate-network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
+  backend_uploads:
+    driver: local
 
 services:
   # ============ BASE DE DATOS ============
@@ -12,7 +23,6 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-crumbskate}
       MYSQL_USER: ${MYSQL_USER:-crumbskate_admin}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-tu_password}
-      MYSQL_INITDB_SKIP_TZINFO: 1
     ports:
       - "${DB_PORT:-3306}:3306"
     volumes:
@@ -40,8 +50,8 @@ services:
     networks:
       - crumbskate-network
     depends_on:
-      db:
-        condition: service_healthy
+      - db
+      condition: service_healthy
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: ${BACKEND_PORT:-5000}
@@ -52,21 +62,15 @@ services:
       DB_NAME: ${MYSQL_DATABASE:-crumbskate}
       JWT_SECRET: ${JWT_SECRET:-crumbskate_secret_key_2024_change_this_in_production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-https://crumbskate.edu.ar}
     ports:
       - "${BACKEND_PORT:-5000}:${BACKEND_PORT:-5000}"
     volumes:
       - backend_uploads:/app/uploads
     healthcheck:
       test:
-        [
-          "CMD",
-          "wget",
-          "--quiet",
-          "--tries=1",
-          "--spider",
-          "http://localhost:${BACKEND_PORT:-5000}/api/health",
-        ]
+        -
+        ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:${BACKEND_PORT:-5000}/api/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -78,7 +82,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
+        VITE_API_URL: ${VITE_API_URL:-https://crumbskate.edu.ar/api}
         NODE_ENV: ${NODE_ENV:-production}
     container_name: crumbskate-frontend
     restart: unless-stopped
@@ -90,25 +94,29 @@ services:
       - "${FRONTEND_PORT:-3000}:80"
     healthcheck:
       test:
-        [
-          "CMD",
-          "wget",
-          "--quiet",
-          "--tries=1",
-          "--spider",
-          "http://localhost:80/",
-        ]
+        -
+        ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
 
-volumes:
-  db_data:
-    driver: local
-  backend_uploads:
-    driver: local
+  # ============ CERTOBOT PARA SSL AUTOMÁTICO ============
+  certbot:
+    image: certbot/certbot
+    container_name: crumbskate-certbot
+    restart: unless-stopped
+    volumes:
+      - ../certbot:/etc/letsencrypt
+      - ../html:/var/www/html
+    entrypoint: /bin/sh -c 'trap exit SIGINT; certbot renew -q; sleep infinity'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - frontend
 
-networks:
-  crumbskate-network:
-    driver: bridge
+volumes:
+  html:
+    driver: local
+  certbot:
+    driver: local

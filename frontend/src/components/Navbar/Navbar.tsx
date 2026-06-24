@@ -27,6 +27,7 @@ const Navbar = ({ children }: { children: ReactNode }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -90,6 +91,7 @@ const Navbar = ({ children }: { children: ReactNode }) => {
               {/* Buscador móvil */}
               <div className="relative flex-1 min-w-0" ref={searchRef}>
                 <input
+                  ref={mobileSearchInputRef}
                   type="text"
                   placeholder="Buscar..."
                   className="input w-full bg-base-200 border-2 border-primary/30 focus:border-primary text-base-content placeholder:text-base-content/30 transition-all pr-8 rounded-none text-xs sm:text-sm h-8 sm:h-10 font-mono"
@@ -100,7 +102,10 @@ const Navbar = ({ children }: { children: ReactNode }) => {
                   }}
                   onFocus={() => setShowDropdown(true)}
                 />
-                <button className="absolute right-0.5 top-1/2 -translate-y-1/2 btn btn-ghost btn-circle btn-xs text-base-content hover:text-accent">
+                <button
+                  onClick={() => mobileSearchInputRef.current?.focus()}
+                  className="absolute right-0.5 top-1/2 -translate-y-1/2 btn btn-ghost btn-circle btn-xs text-base-content hover:text-accent"
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-3.5 w-3.5 opacity-70"
