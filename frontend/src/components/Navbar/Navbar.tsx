@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Cart from "./ModalCart";
 import UserDropDown from "./UserDropDown";
 import { useAuth } from "../../context/AuthContext";
+import { useCart } from "../../context/CartContext";
 import { useConfig } from "../../context/ConfigContext";
 import logo from "../../assets/logo.svg";
 import ThemeSwitcher from "../ThemeSwitcher/ThemeSwitcher";
@@ -20,22 +21,42 @@ const searchSuggestions = [
 const cautionText =
   "FERNANDO FLOR \u26A0 SANTIAGO MEDINA \u26A0 LIZ BENITEZ \u26A0 JAVIER ROMERO \u26A0 ";
 
+const mobileNavLinkClass =
+  "flex items-center gap-2 w-full min-h-9 px-3 py-2 text-[11px] font-mono font-bold uppercase tracking-wide text-base-content/75 hover:bg-base-300 hover:text-base-content active:bg-base-300 rounded-md transition-colors";
+
+const mobileNavLinkAccentClass =
+  "flex items-center gap-2 w-full min-h-9 px-3 py-2 text-[11px] font-impact uppercase tracking-wide text-primary hover:bg-primary/10 active:bg-primary/10 rounded-md transition-colors";
+
 const Navbar = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
+  const { cartItems } = useCart();
   const { config } = useConfig();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const itemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  const closeDrawer = () => setDrawerOpen(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
+  const desktopSearchRef = useRef<HTMLDivElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
-  // Cerrar dropdown al hacer click fuera
+  useEffect(() => {
+    document.body.style.overflow = drawerOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [drawerOpen]);
+
+  // Cerrar dropdown al hacer click fuera (mobile y desktop)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      const outsideMobile =
+        !mobileSearchRef.current || !mobileSearchRef.current.contains(target);
+      const outsideDesktop =
+        !desktopSearchRef.current || !desktopSearchRef.current.contains(target);
+      if (outsideMobile && outsideDesktop) {
         setShowDropdown(false);
       }
     };
@@ -50,13 +71,14 @@ const Navbar = ({ children }: { children: ReactNode }) => {
   );
 
   return (
-    <div className="drawer">
+    <div className="drawer drawer-end">
       <input
         id="my-drawer"
         type="checkbox"
         className="drawer-toggle"
         checked={drawerOpen}
-        onChange={() => setDrawerOpen(!drawerOpen)}
+        readOnly
+        aria-hidden
       />
       <div className="drawer-content flex flex-col min-h-screen">
         <header className="sticky top-0 z-50 w-full">
@@ -89,7 +111,7 @@ const Navbar = ({ children }: { children: ReactNode }) => {
               </Link>
 
               {/* Buscador móvil */}
-              <div className="relative flex-1 min-w-0" ref={searchRef}>
+              <div className="relative flex-1 min-w-0" ref={mobileSearchRef}>
                 <input
                   ref={mobileSearchInputRef}
                   type="text"
@@ -173,7 +195,7 @@ const Navbar = ({ children }: { children: ReactNode }) => {
                   CRUMBSKATE
                 </span>
               </Link>
-              <div className="relative w-full max-w-2xl" ref={searchRef}>
+              <div className="relative w-full max-w-2xl" ref={desktopSearchRef}>
                 <input
                   type="text"
                   placeholder="BUSCAR PRODUCTOS, CATEGORÍAS O MARCAS..."
@@ -261,14 +283,41 @@ const Navbar = ({ children }: { children: ReactNode }) => {
               <Cart />
             </div>
 
-            {/* Mobile menu button */}
-            <div className="navbar-end lg:hidden shrink-0">
-              <label
-                htmlFor="my-drawer"
-                className="btn btn-square btn-ghost btn-sm sm:btn-md text-base-content hover:bg-primary/10"
+            {/* Mobile: carrito + menú */}
+            <div className="navbar-end lg:hidden shrink-0 flex items-center gap-0.5">
+              <Link
+                to="/carrito"
+                className="btn btn-ghost btn-circle btn-sm relative text-base-content hover:bg-primary/10 touch-manipulation"
+                aria-label="Ver carrito"
               >
                 <svg
-                  className="swap-off fill-current"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+                {itemCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-error text-error-content text-[9px] font-impact min-w-[18px] h-[18px] flex items-center justify-center border-2 border-black">
+                    {itemCount}
+                  </span>
+                )}
+              </Link>
+              <button
+                type="button"
+                onClick={() => setDrawerOpen(true)}
+                className="btn btn-square btn-ghost btn-sm sm:btn-md text-base-content hover:bg-primary/10 touch-manipulation"
+                aria-label="Abrir menú"
+              >
+                <svg
+                  className="fill-current"
                   xmlns="http://www.w3.org/2000/svg"
                   width="24"
                   height="24"
@@ -276,30 +325,35 @@ const Navbar = ({ children }: { children: ReactNode }) => {
                 >
                   <path d="M64,384H448V341.33H64Zm0-106.67H448V234.67H64ZM64,128v42.67H448V128Z" />
                 </svg>
-              </label>
+              </button>
             </div>
           </nav>
         </header>
         <div className="flex-1 flex flex-col">{children}</div>
       </div>
 
-      {/* Drawer lateral para móvil */}
-      <div className="drawer-side z-50">
-        <label
-          htmlFor="my-drawer"
+      {/* Drawer móvil — se abre desde la derecha (junto al hamburguesa) */}
+      <div className="drawer-side z-[60]">
+        <button
+          type="button"
           className="drawer-overlay"
-          onClick={() => setDrawerOpen(false)}
-        ></label>
-        <ul className="menu p-4 w-64 sm:w-80 min-h-full bg-concrete text-base-content gap-2 border-r-4 border-primary">
-          {/* Botón de cerrar */}
-          <li className="mb-4">
+          aria-label="Cerrar menú"
+          onClick={closeDrawer}
+        />
+        <aside className="w-56 sm:w-60 min-h-full bg-base-100 text-base-content border-l-2 border-base-300 shadow-2xl flex flex-col">
+          <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-base-300">
+            <span className="font-impact text-[11px] uppercase tracking-[0.25em] text-base-content">
+              Menú
+            </span>
             <button
-              onClick={() => setDrawerOpen(false)}
-              className="btn btn-square btn-ghost btn-sm absolute right-2 top-2 text-base-content hover:text-accent"
+              type="button"
+              onClick={closeDrawer}
+              className="btn btn-ghost btn-xs btn-square shrink-0 text-base-content/60 hover:text-base-content hover:bg-base-300 touch-manipulation"
+              aria-label="Cerrar menú"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
+                className="h-4 w-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -312,57 +366,92 @@ const Navbar = ({ children }: { children: ReactNode }) => {
                 />
               </svg>
             </button>
-          </li>
-          {!user ? (
-            <>
-              <li className="mt-8">
+          </div>
+
+          {user && (
+            <div className="px-3 py-2 border-b border-base-300 bg-base-200/60">
+              <p className="text-[10px] font-impact uppercase tracking-widest text-base-content/40 leading-none mb-0.5">
+                {user.nombre || "Mi cuenta"}
+              </p>
+              <p className="text-[10px] font-mono truncate text-base-content/60" title={user.email}>
+                {user.email}
+              </p>
+            </div>
+          )}
+
+          <nav className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-0.5">
+            {!user ? (
+              <div className="grid grid-cols-2 gap-1.5 px-1 pb-2 mb-1 border-b border-base-300">
                 <Link
                   to="/login"
-                  onClick={() => setDrawerOpen(false)}
-                  className="font-impact text-lg tracking-wider uppercase text-base-content hover:text-primary-content hover:bg-primary rounded-none transition-all"
+                  onClick={closeDrawer}
+                  className="min-h-9 flex items-center justify-center px-2 py-1.5 text-[10px] font-impact uppercase tracking-wide border border-base-300 bg-base-200 text-base-content hover:bg-base-300 transition-colors touch-manipulation"
                 >
-                  Iniciar Sesión
+                  Entrar
                 </Link>
-              </li>
-              <li>
                 <Link
                   to="/registro"
-                  onClick={() => setDrawerOpen(false)}
-                  className="font-impact text-lg tracking-wider uppercase text-base-content hover:text-primary-content hover:bg-primary rounded-none transition-all"
+                  onClick={closeDrawer}
+                  className="min-h-9 flex items-center justify-center px-2 py-1.5 text-[10px] font-impact uppercase tracking-wide bg-primary text-primary-content border border-primary hover:brightness-110 transition-all touch-manipulation"
                 >
-                  Registrarse
+                  Registro
                 </Link>
-              </li>
-            </>
-          ) : (
-            <li className="mt-8 px-4">
-              <div className="flex flex-col items-start gap-1">
-                <span className="text-[10px] font-impact uppercase tracking-widest text-primary">BIENVENIDO</span>
-                <span className="font-impact text-xl tracking-tight uppercase truncate max-w-full text-base-content">
-                  {user.nombre || (user as any).name}
-                </span>
               </div>
-            </li>
-          )}
-          <li>
-            <div onClick={() => setDrawerOpen(false)}>
-              <UserDropDown />
-            </div>
-          </li>
-          <li>
-            <div onClick={() => setDrawerOpen(false)}>
-              <Cart />
-            </div>
-          </li>
-          <li className="mt-4 border-t-2 border-base-300 pt-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-impact uppercase tracking-wider text-base-content/50">
-                Tema
-              </span>
-              <ThemeSwitcher />
-            </div>
-          </li>
-        </ul>
+            ) : (
+              <>
+                <Link to="/perfil" onClick={closeDrawer} className={mobileNavLinkClass}>
+                  Mi Perfil
+                </Link>
+                {isAdmin && (
+                  <Link to="/admin" onClick={closeDrawer} className={mobileNavLinkAccentClass}>
+                    Panel Admin
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    closeDrawer();
+                  }}
+                  className={`${mobileNavLinkClass} text-error/80 hover:text-error hover:bg-error/10 active:bg-error/10`}
+                >
+                  Salir
+                </button>
+                <div className="my-1 border-t border-base-300" />
+              </>
+            )}
+
+            <Link to="/carrito" onClick={closeDrawer} className={mobileNavLinkClass}>
+              Carrito
+              {itemCount > 0 && (
+                <span className="ml-auto min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-primary text-primary-content text-[9px] font-impact rounded-sm">
+                  {itemCount}
+                </span>
+              )}
+            </Link>
+            <Link to="/#catalogo" onClick={closeDrawer} className={mobileNavLinkClass}>
+              Catálogo
+            </Link>
+            {config?.telefono_contacto && (
+              <a
+                href={`https://wa.me/${config.telefono_contacto.replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={closeDrawer}
+                className={mobileNavLinkClass}
+              >
+                WhatsApp
+              </a>
+            )}
+          </nav>
+
+          <div className="px-3 py-2 border-t border-base-300 flex items-center justify-between gap-2 bg-base-200/40">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-base-content/40">
+              Tema
+            </span>
+            <ThemeSwitcher />
+          </div>
+        </aside>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import ProductCard from "../components/ProductCard";
 import { useCart } from "../context/CartContext";
 import { useProducts } from "../context/ProductContext";
 import { categories } from "../data/products";
+import api from "../services/api";
 
 const sectionReveal = {
   hidden: { opacity: 0, y: 40 },
@@ -15,10 +16,32 @@ const sectionReveal = {
   },
 };
 
+const heroBadges = [
+  {
+    title: "Indumentaria 100% Skater",
+    detail:
+      "Prendas y accesorios pensados para la cultura skate: diseños urbanos, talles variados y estilo auténtico en cada colección.",
+  },
+  {
+    title: "Compra Segura vía MercadoLibre",
+    detail:
+      "Pagá con la protección de MercadoLibre: comprador cubierto, medios de pago confiables y respaldo en cada transacción.",
+  },
+  {
+    title: "Envíos a todo el país",
+    detail:
+      "Llevamos tu pedido a cualquier punto de Argentina con seguimiento y opciones de envío según tu ubicación.",
+  },
+];
+
 const Home = () => {
   const { products } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState("todos");
   const [selectedGender, setSelectedGender] = useState("todos");
+  const [expandedBadge, setExpandedBadge] = useState<number | null>(null);
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterStatus, setNewsletterStatus] = useState("");
+  const [newsletterLoading, setNewsletterLoading] = useState(false);
   const { addToCart, cartItems } = useCart();
 
   const handleAddToCart = (product: any) => {
@@ -31,14 +54,30 @@ const Home = () => {
     document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+    setNewsletterLoading(true);
+    setNewsletterStatus("");
+    try {
+      const { data } = await api.post("/newsletter/suscribir", { email: newsletterEmail });
+      setNewsletterStatus(data.message || "¡Suscripción confirmada!");
+      setNewsletterEmail("");
+    } catch (err: any) {
+      setNewsletterStatus(err.response?.data?.error || "Error al suscribirse.");
+    } finally {
+      setNewsletterLoading(false);
+    }
+  };
+
   const filteredProducts = products.filter((p) => {
-    const matchCategory = selectedCategory === "todos" || p.category === selectedCategory;
-    const matchGender = selectedGender === "todos" || p.gender === selectedGender;
+    const matchCategory = selectedCategory === "todos" || p.category?.toLowerCase() === selectedCategory.toLowerCase();
+    const matchGender = selectedGender === "todos" || p.gender?.toLowerCase() === selectedGender.toLowerCase();
     return matchCategory && matchGender;
   });
 
   return (
-    <div className="space-y-0 select-none cursor-default">
+    <div className="space-y-0">
       {/* Hero Section */}
       <section className="bg-base-300 overflow-hidden relative w-screen ml-[calc(50%-50vw)] border-b-4 border-black">
         {/* Scanline overlay */}
@@ -98,9 +137,9 @@ const Home = () => {
               <p className="font-mono text-[9px] sm:text-[10px] md:text-xs tracking-[0.3em] sm:tracking-[0.5em] uppercase opacity-60">
                 Cultura Urbana Argentina
               </p>
-              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-impact tracking-[0.05em] sm:tracking-[0.1em] uppercase leading-[0.9]">
-                CRUMB
-                <br className="sm:hidden" /> SKATE
+              <h1 className="text-6xl sm:text-6xl md:text-7xl lg:text-8xl font-impact tracking-[0.02em] sm:tracking-[0.1em] uppercase flex flex-col items-center gap-2 sm:flex-row sm:gap-4 leading-none">
+                <span>CRUMB</span>
+                <span>SKATE</span>
               </h1>
               <p className="font-mono text-[10px] sm:text-xs md:text-sm text-primary-content/70 max-w-lg tracking-wider leading-relaxed mt-1">
                 Ropa, zapatillas y accesorios de skate. Diseños exclusivos con
@@ -109,13 +148,13 @@ const Home = () => {
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-3 w-full sm:w-auto">
                 <a
                   href="#catalogo"
-                  className="bg-black text-white font-impact uppercase tracking-[0.2em] px-8 py-3 text-xs border-2 border-black hover:bg-white hover:text-black transition-all text-center"
+                  className="min-h-12 flex items-center justify-center bg-black text-white font-impact uppercase tracking-[0.2em] px-8 py-3 text-xs border-2 border-black hover:bg-white hover:text-black transition-all text-center touch-manipulation"
                 >
                   Ver catálogo
                 </a>
                 <a
                   href="#newsletter"
-                  className="bg-transparent text-primary-content font-impact uppercase tracking-[0.2em] px-8 py-3 text-xs border-2 border-primary-content/40 hover:bg-primary-content/10 transition-all text-center"
+                  className="min-h-12 flex items-center justify-center bg-transparent text-primary-content font-impact uppercase tracking-[0.2em] px-8 py-3 text-xs border-2 border-primary-content/40 hover:bg-primary-content/10 transition-all text-center touch-manipulation"
                 >
                   Novedades
                 </a>
@@ -123,28 +162,46 @@ const Home = () => {
             </div>
           </motion.div>
 
-          {/* Quick info badges */}
+          {/* Quick info badges — tap para expandir */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.3 }}
-            className="flex flex-wrap justify-center gap-2 sm:gap-3 mt-6 sm:mt-8 md:mt-10 max-w-3xl"
+            className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-2 sm:gap-3 mt-6 sm:mt-8 md:mt-10 w-full max-w-3xl px-1"
           >
-            {[
-              { icon: "✦", text: "Indumentaria 100% Skater" },
-              { icon: "✦", text: "Compra Segura vía MercadoLibre" },
-              { icon: "✦", text: "Envíos a todo el país" },
-            ].map((item, i) => (
-              <span
-                key={i}
-                className="flex items-center gap-1.5 bg-base-200 border-2 border-black px-3 py-1.5 md:px-4 md:py-2 text-[10px] sm:text-xs font-mono font-bold text-base-content uppercase tracking-wider hover:bg-primary hover:text-primary-content hover:border-black transition-all cursor-default"
-              >
-                <span className="text-primary group-hover:text-primary-content">
-                  {item.icon}
-                </span>
-                {item.text}
-              </span>
-            ))}
+            {heroBadges.map((item, i) => {
+              const isOpen = expandedBadge === i;
+              return (
+                <button
+                  key={item.title}
+                  type="button"
+                  onClick={() => setExpandedBadge(isOpen ? null : i)}
+                  aria-expanded={isOpen}
+                  className={`w-full sm:w-auto text-left flex flex-col items-start gap-0 bg-base-200 border-2 border-black px-3 py-2.5 md:px-4 md:py-2 font-mono font-bold text-base-content uppercase tracking-wider transition-all touch-manipulation ${
+                    isOpen
+                      ? "bg-primary text-primary-content shadow-brutal-sm ring-2 ring-black"
+                      : "hover:bg-primary hover:text-primary-content"
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5 text-[10px] sm:text-xs w-full">
+                    <span className={isOpen ? "text-primary-content" : "text-primary"}>
+                      {isOpen ? "−" : "✦"}
+                    </span>
+                    <span className="flex-1">{item.title}</span>
+                    <span className="text-[9px] opacity-50 normal-case tracking-normal font-mono shrink-0">
+                      {isOpen ? "cerrar" : "ver más"}
+                    </span>
+                  </span>
+                  <p
+                    className={`overflow-hidden text-[10px] sm:text-[11px] normal-case tracking-normal font-mono font-normal leading-relaxed w-full transition-all duration-300 ease-out ${
+                      isOpen ? "max-h-24 opacity-90 mt-2" : "max-h-0 opacity-0 mt-0"
+                    }`}
+                  >
+                    {item.detail}
+                  </p>
+                </button>
+              );
+            })}
           </motion.div>
         </div>
       </section>
@@ -168,7 +225,7 @@ const Home = () => {
             <button
               key={category.id}
               onClick={() => { setSelectedCategory(category.id); setSelectedGender("todos"); }}
-              className={`px-3 py-2 sm:px-4 md:px-6 md:py-3 font-impact transition-all uppercase tracking-[0.1em] sm:tracking-[0.15em] text-[11px] sm:text-xs md:text-sm border-2 border-black rounded-none ${
+              className={`min-h-11 px-4 py-2.5 sm:px-4 md:px-6 md:py-3 font-impact transition-all uppercase tracking-[0.1em] sm:tracking-[0.15em] text-xs sm:text-sm border-2 border-black rounded-none touch-manipulation active:scale-[0.98] ${
                 selectedCategory === category.id && selectedGender === "todos"
                   ? "bg-primary text-primary-content shadow-brutal-sm"
                   : "bg-base-200 text-base-content/70 hover:text-primary-content hover:bg-primary"
@@ -250,16 +307,26 @@ const Home = () => {
             notificaciones sobre nuevos lanzamientos de Crumbskate.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xl mt-6">
+          <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3 w-full max-w-xl mt-6">
             <input
               type="email"
               placeholder="TU@EMAIL.COM"
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
+              required
               className="flex-1 bg-base-300 border-2 border-primary/30 focus:border-primary text-base-content placeholder:text-base-content/20 px-4 py-3 rounded-none font-mono text-sm tracking-wider transition-all outline-none"
             />
-            <button className="bg-primary text-primary-content font-impact uppercase tracking-[0.2em] px-8 py-3 border-2 border-black shadow-brutal hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all text-sm">
-              Suscribirse
+            <button
+              type="submit"
+              disabled={newsletterLoading}
+              className="bg-primary text-primary-content font-impact uppercase tracking-[0.2em] px-8 py-3 border-2 border-black shadow-brutal hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all text-sm disabled:opacity-60"
+            >
+              {newsletterLoading ? "..." : "Suscribirse"}
             </button>
-          </div>
+          </form>
+          {newsletterStatus && (
+            <p className="text-sm font-mono text-base-content/70 mt-2">{newsletterStatus}</p>
+          )}
         </div>
       </motion.section>
 
@@ -281,27 +348,27 @@ const Home = () => {
             </h3>
             <ul className="space-y-3 text-xs font-mono font-bold text-base-content/40 uppercase tracking-[0.3em]">
               <li>
-                <button onClick={() => handleCategoryClick("remeras", "femenino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
+                <button onClick={() => handleCategoryClick("remeras", "femenino")} className="min-h-10 px-2 hover:text-base-content transition-colors uppercase cursor-pointer text-left touch-manipulation">
                   Remeras
                 </button>
               </li>
               <li>
-                <button onClick={() => handleCategoryClick("pantalones", "femenino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
+                <button onClick={() => handleCategoryClick("pantalones", "femenino")} className="min-h-10 px-2 hover:text-base-content transition-colors uppercase cursor-pointer text-left touch-manipulation">
                   Pantalones
                 </button>
               </li>
               <li>
-                <button onClick={() => handleCategoryClick("gorras", "femenino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
+                <button onClick={() => handleCategoryClick("gorras", "femenino")} className="min-h-10 px-2 hover:text-base-content transition-colors uppercase cursor-pointer text-left touch-manipulation">
                   Gorras
                 </button>
               </li>
               <li>
-                <button onClick={() => handleCategoryClick("zapatillas", "femenino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
+                <button onClick={() => handleCategoryClick("zapatillas", "femenino")} className="min-h-10 px-2 hover:text-base-content transition-colors uppercase cursor-pointer text-left touch-manipulation">
                   Zapatillas
                 </button>
               </li>
               <li>
-                <button onClick={() => handleCategoryClick("bolsos", "femenino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
+                <button onClick={() => handleCategoryClick("bolsos", "femenino")} className="min-h-10 px-2 hover:text-base-content transition-colors uppercase cursor-pointer text-left touch-manipulation">
                   Bolsos
                 </button>
               </li>
@@ -313,27 +380,27 @@ const Home = () => {
             </h3>
             <ul className="space-y-3 text-xs font-mono font-bold text-base-content/40 uppercase tracking-[0.3em]">
               <li>
-                <button onClick={() => handleCategoryClick("remeras", "masculino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
+                <button onClick={() => handleCategoryClick("remeras", "masculino")} className="min-h-10 px-2 hover:text-base-content transition-colors uppercase cursor-pointer text-left touch-manipulation">
                   Remeras
                 </button>
               </li>
               <li>
-                <button onClick={() => handleCategoryClick("pantalones", "masculino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
+                <button onClick={() => handleCategoryClick("pantalones", "masculino")} className="min-h-10 px-2 hover:text-base-content transition-colors uppercase cursor-pointer text-left touch-manipulation">
                   Pantalones
                 </button>
               </li>
               <li>
-                <button onClick={() => handleCategoryClick("buzos", "masculino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
+                <button onClick={() => handleCategoryClick("buzos", "masculino")} className="min-h-10 px-2 hover:text-base-content transition-colors uppercase cursor-pointer text-left touch-manipulation">
                   Buzos
                 </button>
               </li>
               <li>
-                <button onClick={() => handleCategoryClick("zapatillas", "masculino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
+                <button onClick={() => handleCategoryClick("zapatillas", "masculino")} className="min-h-10 px-2 hover:text-base-content transition-colors uppercase cursor-pointer text-left touch-manipulation">
                   Zapatillas
                 </button>
               </li>
               <li>
-                <button onClick={() => handleCategoryClick("camisas", "masculino")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
+                <button onClick={() => handleCategoryClick("camisas", "masculino")} className="min-h-10 px-2 hover:text-base-content transition-colors uppercase cursor-pointer text-left touch-manipulation">
                   Camisas
                 </button>
               </li>
@@ -345,17 +412,17 @@ const Home = () => {
             </h3>
             <ul className="space-y-3 text-xs font-mono font-bold text-base-content/40 uppercase tracking-[0.3em]">
               <li>
-                <button onClick={() => handleCategoryClick("medias", "unisex")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
+                <button onClick={() => handleCategoryClick("medias", "unisex")} className="min-h-10 px-2 hover:text-base-content transition-colors uppercase cursor-pointer text-left touch-manipulation">
                   Medias
                 </button>
               </li>
               <li>
-                <button onClick={() => handleCategoryClick("gorras", "unisex")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
+                <button onClick={() => handleCategoryClick("gorras", "unisex")} className="min-h-10 px-2 hover:text-base-content transition-colors uppercase cursor-pointer text-left touch-manipulation">
                   Gorras
                 </button>
               </li>
               <li>
-                <button onClick={() => handleCategoryClick("accesorios", "unisex")} className="hover:text-base-content transition-colors uppercase cursor-pointer text-left">
+                <button onClick={() => handleCategoryClick("accesorios", "unisex")} className="min-h-10 px-2 hover:text-base-content transition-colors uppercase cursor-pointer text-left touch-manipulation">
                   Accesorios
                 </button>
               </li>
