@@ -1,13 +1,14 @@
-import pool from './config/db';
+import prisma from './config/db';
 
 async function testConnection() {
   try {
-    const [rows] = await pool.query('SELECT 1 as result');
-    console.log('Conexión a MariaDB exitosa:', rows);
-    process.exit(0);
+    await prisma.$queryRaw`SELECT 1 as result`;
+    console.log('✅ Conexión a la base de datos exitosa (Prisma + Neon)');
   } catch (error) {
-    console.error('Error conectando a MariaDB:', error);
+    console.error('❌ Error de conexión:', error);
     process.exit(1);
+  } finally {
+    await prisma.$disconnect();
   }
 }
 

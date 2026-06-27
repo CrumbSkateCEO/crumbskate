@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>CrumbSkate — Documentación del Proyecto</title>
+  <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-navy: #14213D;
+      --brand-accent: #FCA311;
+      --brand-light: #E5E5E5;
+      --brand-black: #1a1a1a;
+      --brand-white: #FFFFFF;
+    }
+    html { color: var(--brand-black); background: #f5f6f8; }
+    body {
+      font-family: 'League Spartan', Georgia, serif;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 48px 56px 80px;
+      background: var(--brand-white);
+      line-height: 1.75;
+      font-size: 17px;
+      hyphens: auto;
+    }
+    p { margin: 1em 0; text-align: justify; }
+    h1 {
+      color: var(--brand-navy);
+      font-size: 2em;
+      border-bottom: 4px solid var(--brand-accent);
+      padding-bottom: 12px;
+      margin-top: 0;
+      text-align: left;
+    }
+    header h1.title { display: none; }
+    h2 {
+      color: var(--brand-navy);
+      font-size: 1.45em;
+      margin-top: 2.4em;
+      border-left: 5px solid var(--brand-accent);
+      padding-left: 14px;
+      page-break-after: avoid;
+    }
+    h3 {
+      color: #2c3e50;
+      font-size: 1.15em;
+      margin-top: 1.8em;
+      page-break-after: avoid;
+    }
+    hr { border: none; border-top: 2px solid var(--brand-light); margin: 2.5em 0; }
+    a { color: var(--brand-navy); }
+    strong { color: var(--brand-navy); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.2em 0;
+      font-size: 0.95em;
+      page-break-inside: avoid;
+    }
+    th {
+      background: var(--brand-navy);
+      color: var(--brand-white);
+      padding: 10px 14px;
+      text-align: left;
+    }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--brand-light); }
+    tr:nth-child(even) td { background: #f8f9fb; }
+    pre, code {
+      font-family: Consolas, monospace;
+      font-size: 0.85em;
+    }
+    pre {
+      background: #f4f6f9;
+      border-left: 4px solid var(--brand-accent);
+      padding: 14px 18px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; }
+    pre code { background: none; padding: 0; }
+    ul, ol { padding-left: 1.5em; margin: 1em 0; }
+    li { margin: 0.4em 0; }
+    .print-banner {
+      background: var(--brand-navy);
+      color: var(--brand-white);
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin-bottom: 2em;
+      font-size: 0.92em;
+      text-align: center;
+    }
+    .print-banner strong { color: var(--brand-accent); }
+    @media (max-width: 600px) {
+      body { padding: 20px; font-size: 16px; }
+    }
+    @media print {
+      html { background: white; }
+      body { padding: 0; max-width: 100%; font-size: 11pt; }
+      .print-banner { display: none; }
+      p { text-align: left; }
+      a { color: inherit; text-decoration: none; }
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<div class="print-banner">
+  <strong>Para guardar en PDF:</strong> Ctrl+P → Destino: <em>Guardar como PDF</em>
+</div>
+<header id="title-block-header">
+<h1 class="title">CrumbSkate — Documentación del Proyecto</h1>
+</header>
+<h1 id="crumbskate-documentación-del-proyecto">CrumbSkate —
+Documentación del Proyecto</h1>
+<p><strong>Qué es este documento:</strong> Un resumen claro de todo lo
+que se construyó en CrumbSkate durante los últimos dos meses
+(abril–junio 2026). Está pensado para que cualquier persona del equipo —
+o quien quiera entender el proyecto — pueda leerlo sin necesidad de
+saber programación.</p>
+<p><strong>Versión:</strong> 1.1<br />
+<strong>Fecha:</strong> 26 de junio de 2026</p>
+<hr />
+<h2 id="índice">Índice</h2>
+<ol type="1">
+<li><a href="#1-qué-es-crumbskate">¿Qué es CrumbSkate?</a></li>
+<li><a href="#2-de-dónde-partimos-y-a-dónde-llegamos">¿De dónde partimos
+y a dónde llegamos?</a></li>
+<li><a href="#3-cómo-funciona-la-tienda-para-el-cliente">¿Cómo funciona
+la tienda para el cliente?</a></li>
+<li><a href="#4-qué-puede-hacer-un-administrador">¿Qué puede hacer un
+administrador?</a></li>
+<li><a href="#5-cronología-qué-se-hizo-mes-a-mes">Cronología: qué se
+hizo mes a mes</a></li>
+<li><a href="#6-las-partes-del-proyecto-explicadas-en-simple">Las partes
+del proyecto explicadas en simple</a></li>
+<li><a href="#7-seguridad-y-confianza-del-usuario">Seguridad y confianza
+del usuario</a></li>
+<li><a href="#8-cómo-se-puede-usar-el-proyecto-hoy">Cómo se puede usar
+el proyecto hoy</a></li>
+<li><a href="#9-qué-falta-y-qué-viene-después">Qué falta y qué viene
+después</a></li>
+<li><a href="#10-equipo-y-roles">Equipo y roles</a></li>
+</ol>
+<hr />
+<h2 id="qué-es-crumbskate">1. ¿Qué es CrumbSkate?</h2>
+<p>CrumbSkate es una <strong>tienda online</strong> de ropa y accesorios
+para skaters, pensada para jóvenes en Argentina. La idea es que una
+persona pueda entrar a la página, ver productos, elegir tallas,
+agregarlos al carrito, registrarse, comprar y hacer seguimiento de sus
+pedidos.</p>
+<p>Los pagos están pensados para integrarse con <strong>Mercado Libre /
+Mercado Pago</strong>, que es la forma más habitual de cobrar en el
+país.</p>
+<p>En pocas palabras: es como tener un local de ropa skater, pero en
+internet, con un panel interno para que el dueño o el equipo administre
+productos, stock, pedidos y clientes sin tocar código.</p>
+<hr />
+<h2 id="de-dónde-partimos-y-a-dónde-llegamos">2. ¿De dónde partimos y a
+dónde llegamos?</h2>
+<h3 id="al-inicio-finales-de-abril-2026">Al inicio (finales de abril
+2026)</h3>
+<p>La tienda existía <strong>solo en la pantalla del navegador</strong>.
+Los productos eran datos de prueba cargados a mano en el código. Había
+un carrito y una pantalla de administración muy básica, pero <strong>no
+había un servidor real</strong> guardando la información. Si cerrabas la
+página o cambiabas de computadora, no había una base de datos central
+que respaldara todo.</p>
+<p>Era útil para <strong>mostrar cómo se vería la tienda</strong>, pero
+no para vender de verdad.</p>
+<h3 id="hoy-junio-2026">Hoy (junio 2026)</h3>
+<p>Ahora CrumbSkate es un <strong>sistema completo</strong>:</p>
+<ul>
+<li>Una <strong>página web</strong> donde entra el cliente.</li>
+<li>Un <strong>servidor</strong> (backend) que procesa registros,
+carritos, pedidos y administración.</li>
+<li>Una <strong>base de datos</strong> donde se guarda todo de forma
+permanente: usuarios, productos, stock, pedidos, cupones, reseñas,
+etc.</li>
+<li>Un <strong>panel de administración</strong> con muchas secciones
+para manejar el negocio.</li>
+<li>Formas de <strong>instalar y ejecutar</strong> el proyecto en
+distintos entornos: en la computadora del desarrollador, en la nube o en
+un servidor propio.</li>
+</ul>
+<h3 id="en-una-frase">En una frase</h3>
+<p>Pasamos de un <strong>prototipo visual</strong> a una
+<strong>plataforma de e-commerce funcional</strong>, lista para seguir
+creciendo.</p>
+<hr />
+<h2 id="cómo-funciona-la-tienda-para-el-cliente">3. ¿Cómo funciona la
+tienda para el cliente?</h2>
+<p>Esta sección describe el recorrido de una persona que entra a
+comprar, sin entrar en detalles técnicos.</p>
+<h3 id="entrar-y-explorar">3.1 Entrar y explorar</h3>
+<p>El cliente abre la página principal y ve el catálogo de productos:
+remeras, buzos, gorras, etc. Puede hacer clic en un producto para ver
+fotos, descripción, precio y <strong>tallas disponibles</strong>. Solo
+se muestran productos que están activos en la tienda.</p>
+<h3 id="registrarse-o-iniciar-sesión">3.2 Registrarse o iniciar
+sesión</h3>
+<p>Para agregar cosas al carrito y comprar, la persona debe
+<strong>crear una cuenta</strong> o <strong>iniciar sesión</strong>. Al
+registrarse, el sistema guarda su nombre, email y contraseña de forma
+segura (la contraseña no se guarda en texto plano; se guarda
+encriptada).</p>
+<p>Si olvida la contraseña, puede pedir un <strong>email de
+recuperación</strong> y crear una nueva.</p>
+<h3 id="carrito-de-compras">3.3 Carrito de compras</h3>
+<p>Una vez logueado, puede agregar productos al carrito eligiendo talla
+y cantidad. El carrito <strong>queda guardado en la cuenta</strong>: si
+cierra la página y vuelve otro día, sus productos siguen ahí (siempre
+que inicie sesión de nuevo).</p>
+<p>Desde el carrito puede cambiar cantidades o quitar artículos antes de
+pagar.</p>
+<h3 id="finalizar-la-compra-checkout">3.4 Finalizar la compra
+(checkout)</h3>
+<p>Cuando está listo, va al checkout. Ahí el sistema:</p>
+<ol type="1">
+<li>Revisa que haya productos en el carrito.</li>
+<li>Verifica que haya <strong>stock suficiente</strong> para cada
+talla.</li>
+<li>Calcula el total.</li>
+<li>Crea el <strong>pedido</strong> y lo deja registrado.</li>
+<li>Vacía el carrito.</li>
+<li>Descuenta el stock vendido.</li>
+</ol>
+<p>El cliente puede ver sus pedidos anteriores y el detalle de cada uno
+desde su <strong>perfil</strong>.</p>
+<h3 id="lo-que-el-cliente-ve-hoy-vs.-lo-que-falta">3.5 Lo que el cliente
+ve hoy vs. lo que falta</h3>
+<p><strong>Ya funciona:</strong> navegar, registrarse, carrito, crear
+pedidos, ver historial, recuperar contraseña.</p>
+<p><strong>Todavía en desarrollo:</strong> el cobro automático con
+Mercado Pago al finalizar la compra. El sistema ya tiene preparado el
+lugar donde irá ese pago, pero la integración completa con Mercado Libre
+aún no está terminada.</p>
+<hr />
+<h2 id="qué-puede-hacer-un-administrador">4. ¿Qué puede hacer un
+administrador?</h2>
+<p>No todos los usuarios son iguales. Hay <strong>clientes</strong> y
+<strong>administradores</strong>. Los administradores entran a una zona
+especial de la web: el <strong>panel de administración</strong>
+(<code>/admin</code>).</p>
+<p>Si alguien que no es admin intenta entrar, el sistema lo redirige al
+login.</p>
+<h3 id="panel-principal-dashboard">4.1 Panel principal (Dashboard)</h3>
+<p>Es la “pantalla de inicio” del admin. Muestra números importantes del
+negocio:</p>
+<ul>
+<li>Cuánto se vendió en total.</li>
+<li>Cuántos pedidos hubo.</li>
+<li>Cuánto gasta en promedio cada cliente por compra.</li>
+<li>Los pedidos más recientes.</li>
+</ul>
+<p>También avisa cuando hay cosas que requieren atención: pedidos
+pendientes, productos con poco stock o reseñas que hay que revisar.</p>
+<h3 id="productos">4.2 Productos</h3>
+<p>Desde acá se pueden <strong>crear, editar y desactivar</strong>
+productos. Cada producto puede tener:</p>
+<ul>
+<li>Nombre, descripción, marca, precio.</li>
+<li>Categoría (remeras, buzos, etc.).</li>
+<li>Foto (se sube desde la computadora).</li>
+<li>Varias <strong>tallas/colores</strong>, cada una con su propio
+stock.</li>
+</ul>
+<p>Cuando un producto ya no se vende, no se borra del todo: se
+<strong>desactiva</strong>, para no perder el historial de pedidos
+viejos.</p>
+<h3 id="categorías">4.3 Categorías</h3>
+<p>Organizan el catálogo. Por ejemplo: Remeras, Buzos, Gorras, Medias,
+Bolsos, Accesorios. Facilita que el cliente filtre y encuentre lo que
+busca.</p>
+<h3 id="pedidos">4.4 Pedidos</h3>
+<p>Lista todos los pedidos de todos los clientes. El admin puede ver
+estados (pendiente, confirmado, enviado, entregado, cancelado) y hacer
+seguimiento.</p>
+<h3 id="stock">4.5 Stock</h3>
+<p>Muestra cuántas unidades quedan de cada talla de cada producto. Si el
+stock es muy bajo, el dashboard lo marca como alerta.</p>
+<h3 id="cupones-de-descuento">4.6 Cupones de descuento</h3>
+<p>Permite crear códigos promocionales (por ejemplo “VERANO20”) con un
+porcentaje de descuento y fecha de vencimiento. El cliente podría
+usarlos al comprar cuando esa función esté conectada al checkout.</p>
+<h3 id="reseñas">4.7 Reseñas</h3>
+<p>Los clientes pueden dejar opiniones sobre productos. El admin puede
+<strong>aprobar o rechazar</strong> reseñas antes de que se muestren
+públicamente, para evitar contenido inapropiado.</p>
+<h3 id="reportes">4.8 Reportes</h3>
+<p>Gráficos y listas para entender el negocio: ventas por día, productos
+más vendidos. Sirve para decidir qué reponer, qué promocionar o qué
+dejar de vender.</p>
+<h3 id="configuración-de-la-tienda">4.9 Configuración de la tienda</h3>
+<p>Valores que se pueden cambiar <strong>sin tocar el código</strong>,
+por ejemplo:</p>
+<ul>
+<li>Costo de envío.</li>
+<li>Teléfono y email de contacto.</li>
+<li>Link de Instagram.</li>
+<li>Monto mínimo para envío gratis.</li>
+<li>Mensaje de bienvenida en la home.</li>
+</ul>
+<h3 id="usuarios">4.10 Usuarios</h3>
+<p>Ver listado de clientes y administradores. Se puede cambiar el rol de
+un usuario (por ejemplo, convertir a alguien de confianza en
+administrador).</p>
+<h3 id="newsletter">4.11 Newsletter</h3>
+<p>Los visitantes pueden dejar su email para recibir novedades. Esos
+emails quedan guardados para futuras campañas.</p>
+<hr />
+<h2 id="cronología-qué-se-hizo-mes-a-mes">5. Cronología: qué se hizo mes
+a mes</h2>
+<p>A continuación se resume el trabajo realizado, en orden cronológico,
+explicado de forma sencilla.</p>
+<h3 id="abril-2026-la-tienda-empieza-a-tomar-forma">Abril 2026 — La
+tienda empieza a tomar forma</h3>
+<p><strong>Qué se hizo:</strong> Se armó la parte visible de la tienda:
+página principal, tarjetas de productos, detalle de cada producto,
+carrito, login, registro y una primera versión del panel admin.</p>
+<p><strong>Para qué sirvió:</strong> Tener algo concreto para mostrar,
+probar diseño y definir cómo sería la experiencia del usuario.</p>
+<p><strong>Limitación de esa etapa:</strong> Los productos eran de
+prueba y no venían de una base de datos real.</p>
+<hr />
+<h3 id="mayo-2026-conectar-la-tienda-con-el-cerebro-del-sistema">Mayo
+2026 — Conectar la tienda con el “cerebro” del sistema</h3>
+<p><strong>Qué se hizo:</strong></p>
+<ul>
+<li>Se creó el <strong>servidor</strong> que responde cuando la web pide
+datos (login, productos, carrito, pedidos).</li>
+<li>Se conectó la página con ese servidor: dejó de usar datos
+falsos.</li>
+<li>Se mejoró mucho el <strong>diseño visual</strong> (colores,
+tipografía, animaciones, experiencia en celular).</li>
+<li>Se agregaron páginas importantes: <strong>checkout</strong>,
+<strong>perfil del usuario</strong> y <strong>detalle de
+pedido</strong>.</li>
+<li>Se preparó el proyecto para correr dentro de <strong>Docker</strong>
+(una forma empaquetada de instalar todo junto).</li>
+</ul>
+<p><strong>Para qué sirvió:</strong> La tienda empezó a comportarse como
+un e-commerce de verdad: lo que hace el usuario se guarda y
+persiste.</p>
+<hr />
+<h3
+id="junio-2026-panel-de-administración-completo-e-infraestructura">Junio
+2026 — Panel de administración completo e infraestructura</h3>
+<p><strong>Qué se hizo:</strong></p>
+<ul>
+<li>Se expandió el panel admin de <strong>una sola pantalla</strong> a
+<strong>diez secciones</strong> (productos, pedidos, stock, cupones,
+reportes, etc.).</li>
+<li>Se agregó la <strong>recuperación de contraseña</strong> por
+email.</li>
+<li>Se definieron scripts para <strong>arrancar el proyecto
+fácilmente</strong> en distintos modos (desarrollo local,
+producción).</li>
+<li>Se configuró el despliegue pensado para <strong>Vercel</strong>
+(frontend), <strong>Render</strong> (backend) y <strong>Neon</strong>
+(base de datos en la nube).</li>
+<li>Se preparó la opción de correr todo en un <strong>servidor
+propio</strong> con dominio y certificado de seguridad (HTTPS).</li>
+</ul>
+<p><strong>Para qué sirvió:</strong> El equipo puede administrar la
+tienda sin depender de un programador para cada cambio de producto o
+precio, y el proyecto está más cerca de estar online para usuarios
+reales.</p>
+<hr />
+<h2 id="las-partes-del-proyecto-explicadas-en-simple">6. Las partes del
+proyecto explicadas en simple</h2>
+<p>Imaginá CrumbSkate como un edificio con tres pisos:</p>
+<h3 id="piso-1-la-tienda-frontend">Piso 1 — La tienda (Frontend)</h3>
+<p>Es lo que <strong>ve y toca el usuario</strong>: botones, imágenes,
+formularios, carrito. Está hecho con <strong>React</strong>, una
+tecnología muy usada para páginas web modernas que se sienten rápidas y
+fluidas.</p>
+<p><strong>Analogía:</strong> Es el mostrador y los probadores del
+local.</p>
+<h3 id="piso-2-el-servidor-backend">Piso 2 — El servidor (Backend)</h3>
+<p>Es el <strong>cerebro</strong> que no se ve. Cuando alguien hace clic
+en “Comprar” o “Iniciar sesión”, la tienda le pide algo al servidor, y
+el servidor decide qué hacer: guardar el pedido, revisar stock, validar
+la contraseña, etc.</p>
+<p>Está hecho con <strong>Node.js</strong> y <strong>Express</strong>,
+herramientas estándar para crear servicios web.</p>
+<p><strong>Analogía:</strong> Es el depósito, la caja registradora y el
+encargado que verifica que todo esté en orden.</p>
+<h3 id="piso-3-la-base-de-datos">Piso 3 — La base de datos</h3>
+<p>Es donde <strong>se guarda todo de forma permanente</strong>:
+cuentas, productos, cuánto stock queda, pedidos, cupones. Usamos
+<strong>PostgreSQL</strong>, una base de datos robusta y muy usada en el
+mundo profesional. En la nube puede estar en <strong>Neon</strong>; en
+desarrollo, en la computadora local.</p>
+<p><strong>Analogía:</strong> Es el archivo, el inventario en papel
+(pero digital) y el historial de ventas.</p>
+<h3 id="extra-docker-y-scripts-de-inicio">Extra — Docker y scripts de
+inicio</h3>
+<p><strong>Docker</strong> permite empaquetar la tienda, el servidor y
+(opcionalmente) la base de datos para que cualquier persona del equipo
+pueda levantar el proyecto con pocos pasos, sin pelearse con
+instalaciones complicadas.</p>
+<p>Los scripts como <code>start-crumbskate.sh</code> son atajos que
+automatizan ese proceso.</p>
+<p><strong>Analogía:</strong> Es la llave maestra para abrir el local
+entero con un solo botón.</p>
+<hr />
+<h2 id="seguridad-y-confianza-del-usuario">7. Seguridad y confianza del
+usuario</h2>
+<p>Cuando una tienda maneja contraseñas y datos de clientes, la
+seguridad importa. Esto es lo que el proyecto ya tiene implementado,
+explicado sin tecnicismos:</p>
+<table>
+<colgroup>
+<col style="width: 48%" />
+<col style="width: 51%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Qué protege</th>
+<th>Cómo lo hace</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Contraseñas</td>
+<td>No se guardan tal cual las escribe el usuario. Se guardan
+“hasheadas”, es decir, transformadas de forma irreversible.</td>
+</tr>
+<tr class="even">
+<td>Sesiones</td>
+<td>Al iniciar sesión, el sistema entrega un token (como un pase
+temporal) que expira después de un tiempo.</td>
+</tr>
+<tr class="odd">
+<td>Acceso admin</td>
+<td>Solo usuarios con rol de administrador pueden entrar al panel de
+gestión.</td>
+</tr>
+<tr class="even">
+<td>Ataques comunes</td>
+<td>Se usan herramientas que bloquean intentos masivos de acceso y
+protegen ciertos encabezados de la web.</td>
+</tr>
+<tr class="odd">
+<td>Datos sensibles</td>
+<td>Claves y contraseñas de servicios no van en el código público; van
+en archivos de configuración privados (<code>.env</code>).</td>
+</tr>
+<tr class="even">
+<td>Pedidos</td>
+<td>Al crear un pedido, todo se hace de una sola vez: si algo falla (por
+ejemplo, no hay stock), no se cobra a medias ni se descuenta stock
+incorrectamente.</td>
+</tr>
+<tr class="odd">
+<td>Imágenes</td>
+<td>Solo se permiten subir archivos de imagen, con un tamaño máximo,
+para evitar abusos.</td>
+</tr>
+</tbody>
+</table>
+<p>En resumen: el proyecto no es solo “una página linda”, sino que tiene
+bases de seguridad pensadas para un comercio real.</p>
+<hr />
+<h2 id="cómo-se-puede-usar-el-proyecto-hoy">8. Cómo se puede usar el
+proyecto hoy</h2>
+<h3 id="para-probar-en-la-computadora-desarrollo">Para probar en la
+computadora (desarrollo)</h3>
+<p>El equipo puede levantar la tienda en modo local. Hay un script
+principal que facilita esto:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">./start-crumbskate.sh</span> local</span></code></pre></div>
+<p>Eso intenta levantar la base de datos local, el servidor y la página
+web para probar todo en <code>localhost</code>.</p>
+<p>También existe modo <code>prod</code> para conectar con la base de
+datos en la nube (Neon) en lugar de una local.</p>
+<h3 id="para-publicar-en-internet-producción">Para publicar en internet
+(producción)</h3>
+<p>La idea de despliegue actual es:</p>
+<table>
+<colgroup>
+<col style="width: 24%" />
+<col style="width: 41%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parte</th>
+<th>Dónde vive</th>
+<th>Para qué</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Página web</td>
+<td>Vercel</td>
+<td>Rápida, gratuita para proyectos, ideal para React</td>
+</tr>
+<tr class="even">
+<td>Servidor / API</td>
+<td>Render</td>
+<td>Ejecuta el backend las 24 horas</td>
+</tr>
+<tr class="odd">
+<td>Base de datos</td>
+<td>Neon</td>
+<td>PostgreSQL en la nube, con respaldo</td>
+</tr>
+</tbody>
+</table>
+<p>También se puede hostear <strong>todo en un servidor propio</strong>
+(por ejemplo con dominio <code>crumbskate.edu.ar</code>) usando Docker,
+Nginx y certificados SSL.</p>
+<h3 id="qué-necesita-configurarse-sin-entrar-en-detalle">Qué necesita
+configurarse (sin entrar en detalle)</h3>
+<p>Antes de poner la tienda online de verdad, alguien del equipo debe
+completar:</p>
+<ul>
+<li>URL de la base de datos.</li>
+<li>Clave secreta para las sesiones.</li>
+<li>URL de la página web (para que el servidor acepte las
+peticiones).</li>
+<li>Datos de email (para recuperar contraseñas).</li>
+<li>Credenciales de Mercado Pago (cuando se implemente el cobro).</li>
+</ul>
+<p>Todo eso va en archivos de configuración, no en el código que se sube
+a GitHub.</p>
+<hr />
+<h2 id="qué-falta-y-qué-viene-después">9. Qué falta y qué viene
+después</h2>
+<p>Ningún proyecto queda “terminado” de un día para otro. Estas son las
+áreas que aún requieren trabajo o mejora:</p>
+<h3 id="prioridad-alta">Prioridad alta</h3>
+<ol type="1">
+<li><strong>Pagos con Mercado Pago</strong> — Hoy se crea el pedido,
+pero el cobro automático al cliente aún no está conectado.</li>
+<li><strong>Actualizar documentación general</strong> — El README
+principal del repo todavía menciona tecnologías viejas (MySQL, Railway)
+que ya no son las que usa el proyecto.</li>
+<li><strong>Migraciones de base de datos más ordenadas</strong> — Para
+que los cambios futuros en la estructura de datos se apliquen de forma
+controlada en producción.</li>
+</ol>
+<h3 id="prioridad-media">Prioridad media</h3>
+<ol start="4" type="1">
+<li><strong>Almacenamiento de imágenes en la nube</strong> — Hoy las
+fotos de productos se guardan en el servidor. En servicios como Render,
+eso puede borrarse al redeployar. Conviene usar un servicio de archivos
+(tipo Cloudinary o S3).</li>
+<li><strong>Mejor experiencia si no estás logueado</strong> — Si alguien
+intenta agregar al carrito sin cuenta, conviene mostrarle un mensaje
+claro y llevarlo al registro.</li>
+<li><strong>Pruebas automáticas</strong> — Tests que verifiquen que
+login, carrito y pedidos siguen funcionando después de cada cambio.</li>
+</ol>
+<h3 id="ideas-para-más-adelante">Ideas para más adelante</h3>
+<ul>
+<li>Notificaciones por email cuando cambia el estado de un pedido.</li>
+<li>App móvil o versión PWA.</li>
+<li>Más métodos de pago.</li>
+<li>Programa de puntos o fidelización.</li>
+<li>Integración con redes sociales para login rápido.</li>
+</ul>
+<hr />
+<h2 id="equipo-y-roles">10. Equipo y roles</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Persona</th>
+<th>Rol en el proyecto</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Fernando Flor</td>
+<td>Líder del proyecto, backend y frontend</td>
+</tr>
+<tr class="even">
+<td>Santiago Medina</td>
+<td>Base de datos y backend</td>
+</tr>
+<tr class="odd">
+<td>Liz Benitez</td>
+<td>Diseño y documentación</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cómo-se-reparte-el-trabajo-en-términos-simples">Cómo se reparte
+el trabajo (en términos simples)</h3>
+<ul>
+<li><strong>Fernando</strong> lidera la visión técnica y construye gran
+parte de lo que ve el usuario y lo que corre en el servidor.</li>
+<li><strong>Santiago</strong> se enfoca en que los datos estén bien
+organizados, que la base de datos funcione y que el backend sea
+confiable.</li>
+<li><strong>Liz</strong> cuida que la experiencia visual y la
+documentación (como este archivo) sean claras para el equipo y para
+quien evalúe el proyecto.</li>
+</ul>
+<hr />
+<h2 id="resumen-final">Resumen final</h2>
+<p>En dos meses, CrumbSkate pasó de ser una <strong>maqueta
+interactiva</strong> a una <strong>plataforma de comercio
+electrónico</strong> con:</p>
+<ul>
+<li>Tienda online para clientes (catálogo, carrito, cuenta,
+pedidos).</li>
+<li>Panel de administración completo para manejar el negocio.</li>
+<li>Base de datos real y servidor que procesa todo.</li>
+<li>Caminos definidos para desarrollo local y publicación en
+internet.</li>
+<li>Bases de seguridad para proteger usuarios y datos.</li>
+</ul>
+<p>Lo más importante para entender el estado actual: <strong>la
+estructura del negocio digital ya está armada</strong>. Lo que falta es
+principalmente conectar el cobro con Mercado Pago, pulir detalles de
+producción y seguir mejorando la experiencia del cliente.</p>
+<hr />
+<h2 id="cómo-guardar-este-documento-en-pdf">Cómo guardar este documento
+en PDF</h2>
+<ol type="1">
+<li>Abrí el archivo <code>DOCUMENTACION_TECNICA_CRUMBSKATE.html</code>
+(en la carpeta <code>docs/</code>) con Chrome o Firefox.</li>
+<li>Presioná <strong>Ctrl + P</strong>.</li>
+<li>Elegí <strong>Guardar como PDF</strong>.</li>
+<li>Guardá el archivo donde quieras (Drive, USB, etc.).</li>
+</ol>
+<p>También podés subir el archivo <code>.md</code> o <code>.html</code>
+directamente a Google Drive.</p>
+<hr />
+<p><em>Documento elaborado a partir del trabajo realizado en el
+repositorio CrumbSkate entre abril y junio de 2026.</em></p>
+</body>
+</html>

@@ -25,9 +25,9 @@ const AdminLayout = () => {
         />
       )}
 
-      {/* Sidebar (fijo en desktop, drawer en mobile) */}
+      {/* Sidebar (fijo en desktop, drawer en mobile desde la izquierda) */}
       <div 
-        className={`fixed lg:static inset-y-0 left-0 z-50 transform ${
+        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 max-w-[85vw] transform ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 transition-transform duration-300 ease-in-out`}
       >

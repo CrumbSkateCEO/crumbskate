@@ -1,0 +1,26 @@
+# Dependencias
+node_modules/
+
+# Build
+dist/
+
+# Variables de entorno — NUNCA subir al repo
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Carpeta de uploads (archivos subidos por usuarios)
+uploads/*
+!uploads/.gitkeep
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# TypeScript cache
+*.tsbuildinfo

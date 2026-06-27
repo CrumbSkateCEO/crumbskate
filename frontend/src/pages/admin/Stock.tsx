@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
+import { getAssetUrl } from "../../utils/assets";
 import { MdEdit, MdSave, MdCancel } from "react-icons/md";
 
 const formatPrice = (n: number) =>
@@ -65,7 +66,7 @@ const AdminStock = () => {
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg overflow-hidden bg-base-300 flex-shrink-0">
                           {item.imagen_url ? (
-                            <img src={item.imagen_url.startsWith('http') ? item.imagen_url : `http://localhost:5000${item.imagen_url}`} alt={item.producto} className="w-full h-full object-cover" />
+                            <img src={getAssetUrl(item.imagen_url)} alt={item.producto} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-xs opacity-30">IMG</div>
                           )}

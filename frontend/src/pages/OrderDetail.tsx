@@ -68,10 +68,10 @@ const OrderDetail = () => {
   if (error || !order) {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4 text-center">
-        <div className="bg-error/10 border-2 border-error p-8 rounded-3xl">
-          <h2 className="text-2xl font-black uppercase text-error mb-4">Error</h2>
-          <p className="text-error/80 mb-6">{error}</p>
-          <Link to="/perfil" className="btn btn-primary font-black uppercase tracking-widest border-2 border-black rounded-none shadow-brutal hover:translate-y-1 hover:shadow-none transition-all">
+        <div className="bg-error text-error-content border-4 border-black shadow-brutal p-8">
+          <h2 className="text-3xl font-impact uppercase mb-4 tracking-[0.1em]">Error</h2>
+          <p className="font-mono font-bold uppercase tracking-wider mb-6 opacity-80">{error}</p>
+          <Link to="/perfil" className="bg-black text-white font-impact uppercase tracking-[0.2em] px-8 py-3 border-4 border-black shadow-brutal hover:bg-white hover:text-black hover:shadow-none hover:translate-y-1 hover:translate-x-1 transition-all inline-block touch-manipulation">
             Volver al perfil
           </Link>
         </div>
@@ -85,15 +85,15 @@ const OrderDetail = () => {
       animate={{ opacity: 1, y: 0 }}
       className="max-w-4xl mx-auto py-12 px-4 space-y-8"
     >
-      <div className="flex items-center justify-between">
-        <Link to="/perfil" className="btn btn-ghost hover:bg-base-300 font-bold uppercase tracking-widest flex items-center gap-2 border-2 border-transparent hover:border-black rounded-none transition-all">
+      <div className="flex items-center justify-between mb-2">
+        <Link to="/perfil" className="bg-base-200 text-base-content hover:bg-black hover:text-white font-impact uppercase tracking-[0.2em] flex items-center gap-2 border-4 border-black shadow-brutal hover:shadow-none hover:translate-y-1 hover:translate-x-1 px-4 py-2 transition-all touch-manipulation">
           <MdArrowBack size={20} />
           Volver
         </Link>
       </div>
 
       <div className="bg-base-200 border-4 border-black shadow-brutal overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.5) 10px, rgba(0,0,0,0.5) 12px)" }}></div>
         
         <div className="p-8 border-b-4 border-black flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10 bg-base-300/50">
           <div>

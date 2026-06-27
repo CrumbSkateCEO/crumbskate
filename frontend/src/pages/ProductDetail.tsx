@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import api from "../services/api";
+import { getAssetUrl } from "../utils/assets";
 import { useCart } from "../context/CartContext";
 
 const formatPrice = (n: number) =>
@@ -109,9 +110,7 @@ const ProductDetail = () => {
     navigate("/checkout");
   };
 
-  const imageUrl = product.imagen_url 
-    ? (product.imagen_url.startsWith('http') ? product.imagen_url : `http://localhost:5000${product.imagen_url}`)
-    : null;
+  const imageUrl = product.imagen_url ? getAssetUrl(product.imagen_url) : null;
 
   return (
     <motion.section

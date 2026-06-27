@@ -24,7 +24,11 @@ const AdminUsers = () => {
     fetchUsers();
   }, [tab]);
 
-  const toggleRole = async (id: number, currentRole: string) => {
+  const toggleRole = async (id: number, currentRole: string, esSuperadmin?: boolean) => {
+    if (esSuperadmin) {
+      alert("No se puede modificar el rol del superadministrador.");
+      return;
+    }
     if (String(id) === String(user?.id)) {
       alert("No puedes cambiar tu propio rol.");
       return;
@@ -34,7 +38,8 @@ const AdminUsers = () => {
       try {
         await api.put(`/usuarios/${id}/rol`, { rol: newRole });
         fetchUsers();
-      } catch (error) {
+      } catch (error: any) {
+        alert(error.response?.data?.error || "Error al actualizar el rol.");
         console.error("Error updating role", error);
       }
     }
@@ -74,15 +79,20 @@ const AdminUsers = () => {
                         {u.nombre.charAt(0)}
                       </div>
                       {u.nombre}
+                      {u.es_superadmin && (
+                        <span className="badge badge-warning badge-sm uppercase font-black tracking-widest">
+                          Super Admin
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="font-mono text-sm opacity-80">{u.email}</td>
                   <td className="text-xs opacity-70">{new Date(u.created_at).toLocaleDateString()}</td>
                   <td className="text-right">
                     <button 
-                      onClick={() => toggleRole(u.id, u.rol)} 
+                      onClick={() => toggleRole(u.id, u.rol, u.es_superadmin)} 
                       className={`btn btn-xs uppercase font-black tracking-widest ${u.rol === 'admin' ? 'btn-error btn-outline' : 'btn-success btn-outline'}`}
-                      disabled={String(u.id) === String(user?.id)}
+                      disabled={String(u.id) === String(user?.id) || u.es_superadmin}
                     >
                       Hacer {u.rol === 'admin' ? 'Cliente' : 'Admin'}
                     </button>

@@ -9,9 +9,13 @@ function errorHandler(err, req, res, next) {
     if (err.type === 'validation') {
         return res.status(400).json({ error: err.message });
     }
-    // Error de duplicado en MySQL (código 1062)
-    if (err.code === 'ER_DUP_ENTRY') {
+    // Error de duplicado (Prisma P2002 / MySQL ER_DUP_ENTRY)
+    if (err.code === 'P2002' || err.code === 'ER_DUP_ENTRY') {
         return res.status(409).json({ error: 'Ya existe un registro con ese valor.' });
+    }
+    // Violación de foreign key (Prisma P2003)
+    if (err.code === 'P2003') {
+        return res.status(400).json({ error: 'Operación no permitida: hay registros relacionados.' });
     }
     // Error genérico - en producción no exponemos detalles internos
     const statusCode = err.statusCode || 500;

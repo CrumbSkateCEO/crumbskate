@@ -8,6 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -16,62 +27,77 @@ exports.crear = crear;
 exports.historial = historial;
 exports.detalle = detalle;
 exports.todos = todos;
+exports.cancelar = cancelar;
 const db_1 = __importDefault(require("../config/db"));
 // POST /api/pedidos  - crea un pedido desde el carrito
 function crear(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
-        var _a, _b;
-        const conn = yield db_1.default.getConnection();
         try {
-            yield conn.beginTransaction(); // Todo o nada
-            // Obtener carrito del usuario
-            const [carritos] = yield conn.query('SELECT id FROM carrito WHERE usuario_id = ? LIMIT 1', [(_a = req.usuario) === null || _a === void 0 ? void 0 : _a.id]);
-            if (carritos.length === 0) {
-                return res.status(400).json({ error: 'No tenés un carrito activo.' });
-            }
-            const carritoId = carritos[0].id;
-            // Obtener items del carrito
-            const [items] = yield conn.query(`SELECT ci.variante_id, ci.cantidad,
-              v.stock, v.precio_extra,
-              p.precio_base
-       FROM carrito_items ci
-       JOIN variantes v ON ci.variante_id = v.id
-       JOIN productos p ON v.producto_id = p.id
-       WHERE ci.carrito_id = ?`, [carritoId]);
-            if (items.length === 0) {
-                return res.status(400).json({ error: 'El carrito está vacío.' });
-            }
-            // Verificar stock de cada item
-            for (const item of items) {
-                if (item.stock < item.cantidad) {
-                    yield conn.rollback();
-                    return res.status(400).json({ error: 'Stock insuficiente para uno o más productos.' });
+            const resultado = yield db_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
+                var _a;
+                const carrito = yield tx.carrito.findFirst({
+                    where: { usuario_id: (_a = req.usuario) === null || _a === void 0 ? void 0 : _a.id },
+                });
+                if (!carrito) {
+                    throw Object.assign(new Error('No tenés un carrito activo.'), { statusCode: 400 });
                 }
-            }
-            // Calcular total
-            const total = items.reduce((acc, i) => acc + (parseFloat(i.precio_base) + parseFloat(i.precio_extra)) * i.cantidad, 0);
-            // Crear pedido
-            const [pedido] = yield conn.query("INSERT INTO pedidos (usuario_id, total, estado) VALUES (?, ?, 'pendiente')", [(_b = req.usuario) === null || _b === void 0 ? void 0 : _b.id, total.toFixed(2)]);
-            const pedidoId = pedido.insertId;
-            // Insertar items del pedido y descontar stock
-            for (const item of items) {
-                const precioUnitario = parseFloat(item.precio_base) + parseFloat(item.precio_extra);
-                yield conn.query('INSERT INTO pedido_items (pedido_id, variante_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)', [pedidoId, item.variante_id, item.cantidad, precioUnitario]);
-                yield conn.query('UPDATE variantes SET stock = stock - ? WHERE id = ?', [item.cantidad, item.variante_id]);
-            }
-            // Registrar pago pendiente
-            yield conn.query("INSERT INTO pagos (pedido_id, estado, monto) VALUES (?, 'pendiente', ?)", [pedidoId, total.toFixed(2)]);
-            // Vaciar carrito
-            yield conn.query('DELETE FROM carrito_items WHERE carrito_id = ?', [carritoId]);
-            yield conn.commit();
-            res.status(201).json({ message: 'Pedido creado.', pedidoId, total: total.toFixed(2) });
+                const items = yield tx.carritoItem.findMany({
+                    where: { carrito_id: carrito.id },
+                    include: {
+                        variante: { include: { producto: { select: { precio_base: true } } } },
+                    },
+                });
+                if (items.length === 0) {
+                    throw Object.assign(new Error('El carrito está vacío.'), { statusCode: 400 });
+                }
+                for (const item of items) {
+                    if (item.variante.stock < item.cantidad) {
+                        throw Object.assign(new Error('Stock insuficiente para uno o más productos.'), { statusCode: 400 });
+                    }
+                }
+                const total = items.reduce((acc, item) => {
+                    const precio = Number(item.variante.producto.precio_base) + Number(item.variante.precio_extra);
+                    return acc + precio * item.cantidad;
+                }, 0);
+                const pedido = yield tx.pedido.create({
+                    data: {
+                        usuario_id: req.usuario.id,
+                        total,
+                        estado: 'pendiente',
+                    },
+                });
+                for (const item of items) {
+                    const precioUnitario = Number(item.variante.producto.precio_base) + Number(item.variante.precio_extra);
+                    yield tx.pedidoItem.create({
+                        data: {
+                            pedido_id: pedido.id,
+                            variante_id: item.variante_id,
+                            cantidad: item.cantidad,
+                            precio_unitario: precioUnitario,
+                        },
+                    });
+                    yield tx.variante.update({
+                        where: { id: item.variante_id },
+                        data: { stock: { decrement: item.cantidad } },
+                    });
+                }
+                yield tx.pago.create({
+                    data: { pedido_id: pedido.id, estado: 'pendiente', monto: total },
+                });
+                yield tx.carritoItem.deleteMany({ where: { carrito_id: carrito.id } });
+                return { pedidoId: pedido.id, total };
+            }));
+            res.status(201).json({
+                message: 'Pedido creado.',
+                pedidoId: resultado.pedidoId,
+                total: Number(resultado.total).toFixed(2),
+            });
         }
         catch (err) {
-            yield conn.rollback();
+            if (err.statusCode) {
+                return res.status(err.statusCode).json({ error: err.message });
+            }
             next(err);
-        }
-        finally {
-            conn.release();
         }
     });
 }
@@ -80,14 +106,19 @@ function historial(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
         try {
-            const [pedidos] = yield db_1.default.query(`SELECT p.id, p.estado, p.total, p.ml_order_id, p.created_at,
-              COUNT(pi.id) AS cantidad_items
-       FROM pedidos p
-       LEFT JOIN pedido_items pi ON p.id = pi.pedido_id
-       WHERE p.usuario_id = ?
-       GROUP BY p.id
-       ORDER BY p.created_at DESC`, [(_a = req.usuario) === null || _a === void 0 ? void 0 : _a.id]);
-            res.json(pedidos);
+            const pedidos = yield db_1.default.pedido.findMany({
+                where: { usuario_id: (_a = req.usuario) === null || _a === void 0 ? void 0 : _a.id },
+                orderBy: { created_at: 'desc' },
+                include: { _count: { select: { items: true } } },
+            });
+            res.json(pedidos.map((p) => ({
+                id: p.id,
+                estado: p.estado,
+                total: p.total,
+                ml_order_id: p.ml_order_id,
+                created_at: p.created_at,
+                cantidad_items: p._count.items,
+            })));
         }
         catch (err) {
             next(err);
@@ -99,17 +130,33 @@ function detalle(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
         try {
-            const [pedidos] = yield db_1.default.query('SELECT * FROM pedidos WHERE id = ? AND usuario_id = ?', [req.params.id, (_a = req.usuario) === null || _a === void 0 ? void 0 : _a.id]);
-            if (pedidos.length === 0) {
+            const pedido = yield db_1.default.pedido.findFirst({
+                where: { id: parseInt(req.params.id), usuario_id: (_a = req.usuario) === null || _a === void 0 ? void 0 : _a.id },
+                include: {
+                    items: {
+                        include: {
+                            variante: {
+                                include: { producto: { select: { nombre: true } } },
+                            },
+                        },
+                    },
+                },
+            });
+            if (!pedido) {
                 return res.status(404).json({ error: 'Pedido no encontrado.' });
             }
-            const [items] = yield db_1.default.query(`SELECT pi.cantidad, pi.precio_unitario,
-              p.nombre, v.talla, v.color
-       FROM pedido_items pi
-       JOIN variantes v ON pi.variante_id = v.id
-       JOIN productos p ON v.producto_id = p.id
-       WHERE pi.pedido_id = ?`, [req.params.id]);
-            res.json(Object.assign(Object.assign({}, pedidos[0]), { items }));
+            const items = pedido.items.map((pi) => {
+                var _a, _b, _c;
+                return ({
+                    cantidad: pi.cantidad,
+                    precio_unitario: pi.precio_unitario,
+                    nombre: (_a = pi.variante) === null || _a === void 0 ? void 0 : _a.producto.nombre,
+                    talla: (_b = pi.variante) === null || _b === void 0 ? void 0 : _b.talla,
+                    color: (_c = pi.variante) === null || _c === void 0 ? void 0 : _c.color,
+                });
+            });
+            const { items: _ } = pedido, pedidoData = __rest(pedido, ["items"]);
+            res.json(Object.assign(Object.assign({}, pedidoData), { items }));
         }
         catch (err) {
             next(err);
@@ -120,13 +167,64 @@ function detalle(req, res, next) {
 function todos(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const [pedidos] = yield db_1.default.query(`SELECT p.id, p.estado, p.total, p.created_at, u.nombre as cliente, u.email
-       FROM pedidos p
-       JOIN usuarios u ON p.usuario_id = u.id
-       ORDER BY p.created_at DESC`);
-            res.json(pedidos);
+            const pedidos = yield db_1.default.pedido.findMany({
+                orderBy: { created_at: 'desc' },
+                include: {
+                    usuario: { select: { nombre: true, email: true } },
+                },
+            });
+            res.json(pedidos.map((p) => ({
+                id: p.id,
+                estado: p.estado,
+                total: p.total,
+                created_at: p.created_at,
+                cliente: p.usuario.nombre,
+                email: p.usuario.email,
+            })));
         }
         catch (err) {
+            next(err);
+        }
+    });
+}
+// PUT /api/pedidos/:id/cancelar
+function cancelar(req, res, next) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield db_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
+                var _a;
+                const pedido = yield tx.pedido.findFirst({
+                    where: { id: parseInt(req.params.id), usuario_id: (_a = req.usuario) === null || _a === void 0 ? void 0 : _a.id },
+                });
+                if (!pedido) {
+                    throw Object.assign(new Error('Pedido no encontrado.'), { statusCode: 404 });
+                }
+                if (pedido.estado !== 'pendiente') {
+                    throw Object.assign(new Error('Solo se pueden cancelar pedidos pendientes.'), { statusCode: 400 });
+                }
+                yield tx.pedido.update({
+                    where: { id: pedido.id },
+                    data: { estado: 'cancelado' },
+                });
+                const items = yield tx.pedidoItem.findMany({
+                    where: { pedido_id: pedido.id },
+                    select: { variante_id: true, cantidad: true },
+                });
+                for (const item of items) {
+                    if (item.variante_id) {
+                        yield tx.variante.update({
+                            where: { id: item.variante_id },
+                            data: { stock: { increment: item.cantidad } },
+                        });
+                    }
+                }
+            }));
+            res.json({ message: 'Pedido cancelado exitosamente.' });
+        }
+        catch (err) {
+            if (err.statusCode) {
+                return res.status(err.statusCode).json({ error: err.message });
+            }
             next(err);
         }
     });

@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RolUsuario {
+  cliente
+  admin
+
+  @@map("rol_usuario")
+}
+
+enum GeneroProducto {
+  femenino
+  masculino
+  unisex
+
+  @@map("genero_producto")
+}
+
+enum EstadoPedido {
+  pendiente
+  confirmado
+  enviado
+  entregado
+  cancelado
+
+  @@map("estado_pedido")
+}
+
+enum EstadoPago {
+  pendiente
+  aprobado
+  rechazado
+
+  @@map("estado_pago")
+}
+
+model Usuario {
+  id                  Int        @id @default(autoincrement())
+  nombre              String     @db.VarChar(150)
+  email               String     @unique @db.VarChar(150)
+  password_hash       String     @db.VarChar(255)
+  telefono            String?    @db.VarChar(50)
+  rol                 RolUsuario @default(cliente)
+  reset_token         String?    @db.VarChar(255)
+  reset_token_expires DateTime?
+  created_at          DateTime   @default(now())
+
+  carrito Carrito?
+  pedidos Pedido[]
+  resenas Resena[]
+
+  @@map("usuarios")
+}
+
+model Categoria {
+  id          Int        @id @default(autoincrement())
+  nombre      String     @db.VarChar(100)
+  descripcion String?
+  productos   Producto[]
+
+  @@map("categorias")
+}
+
+model Producto {
+  id               Int            @id @default(autoincrement())
+  categoria_id     Int?
+  nombre           String         @db.VarChar(150)
+  descripcion      String?
+  marca            String?        @db.VarChar(50)
+  codigo_sku       String?        @unique @db.VarChar(50)
+  precio_base      Decimal        @db.Decimal(10, 2)
+  imagen_url       String?        @db.VarChar(255)
+  mercadolibre_url String?        @db.VarChar(255)
+  activo           Boolean        @default(true)
+  genero           GeneroProducto @default(unisex)
+
+  categoria Categoria? @relation(fields: [categoria_id], references: [id], onDelete: SetNull)
+  variantes Variante[]
+  resenas   Resena[]
+
+  @@map("productos")
+}
+
+model Variante {
+  id           Int      @id @default(autoincrement())
+  producto_id  Int
+  talla        String?  @db.VarChar(50)
+  color        String?  @db.VarChar(50)
+  stock        Int      @default(0)
+  precio_extra Decimal  @default(0) @db.Decimal(10, 2)
+
+  producto      Producto       @relation(fields: [producto_id], references: [id], onDelete: Cascade)
+  carrito_items CarritoItem[]
+  pedido_items  PedidoItem[]
+
+  @@map("variantes")
+}
+
+model Carrito {
+  id         Int      @id @default(autoincrement())
+  usuario_id Int      @unique
+  created_at DateTime @default(now())
+
+  usuario Usuario       @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  items   CarritoItem[]
+
+  @@map("carrito")
+}
+
+model CarritoItem {
+  id          Int @id @default(autoincrement())
+  carrito_id  Int
+  variante_id Int
+  cantidad    Int @default(1)
+
+  carrito  Carrito  @relation(fields: [carrito_id], references: [id], onDelete: Cascade)
+  variante Variante @relation(fields: [variante_id], references: [id], onDelete: Cascade)
+
+  @@map("carrito_items")
+}
+
+model Pedido {
+  id            Int          @id @default(autoincrement())
+  usuario_id    Int
+  estado        EstadoPedido @default(pendiente)
+  total         Decimal      @db.Decimal(10, 2)
+  ml_order_id   String?      @db.VarChar(100)
+  observaciones String?
+  created_at    DateTime     @default(now())
+
+  usuario Usuario      @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  items   PedidoItem[]
+  pago    Pago?
+
+  @@map("pedidos")
+}
+
+model PedidoItem {
+  id              Int     @id @default(autoincrement())
+  pedido_id       Int
+  variante_id     Int?
+  cantidad        Int
+  precio_unitario Decimal @db.Decimal(10, 2)
+
+  pedido   Pedido    @relation(fields: [pedido_id], references: [id], onDelete: Cascade)
+  variante Variante? @relation(fields: [variante_id], references: [id], onDelete: SetNull)
+
+  @@map("pedido_items")
+}
+
+model Pago {
+  id            Int        @id @default(autoincrement())
+  pedido_id     Int        @unique
+  ml_payment_id String?    @db.VarChar(100)
+  estado        EstadoPago @default(pendiente)
+  monto         Decimal    @db.Decimal(10, 2)
+  fecha         DateTime   @default(now())
+
+  pedido Pedido @relation(fields: [pedido_id], references: [id], onDelete: Cascade)
+
+  @@map("pagos")
+}
+
+model Cupon {
+  id                   Int       @id @default(autoincrement())
+  codigo               String    @unique @db.VarChar(50)
+  descuento_porcentaje Decimal   @db.Decimal(5, 2)
+  valido_hasta         DateTime?
+  activo               Boolean   @default(true)
+  created_at           DateTime  @default(now())
+
+  @@map("cupones")
+}
+
+model Resena {
+  id           Int      @id @default(autoincrement())
+  usuario_id   Int
+  producto_id  Int
+  calificacion Int
+  comentario   String?
+  aprobado     Boolean  @default(true)
+  created_at   DateTime @default(now())
+
+  usuario  Usuario  @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  producto Producto @relation(fields: [producto_id], references: [id], onDelete: Cascade)
+
+  @@map("resenas")
+}
+
+model Configuracion {
+  id         Int      @id @default(autoincrement())
+  clave      String   @unique @db.VarChar(100)
+  valor      String?
+  updated_at DateTime @default(now())
+
+  @@map("configuracion")
+}
+
+model NewsletterSuscriptor {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique @db.VarChar(150)
+  activo     Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  @@map("newsletter_suscriptores")
+}

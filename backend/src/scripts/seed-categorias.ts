@@ -1,17 +1,17 @@
-import pool from '../config/db';
+import prisma from '../config/db';
 
-const populate = async () => {
-  try {
-    const cats = ['Remeras', 'Buzos', 'Gorras', 'Medias', 'Bolsos', 'Accesorios'];
-    for (const c of cats) {
-      await pool.query('INSERT INTO categorias (nombre, descripcion) VALUES (?, ?)', [c, 'Categoría base']);
+const CATEGORIAS = ['Remeras', 'Buzos', 'Gorras', 'Medias', 'Bolsos', 'Accesorios'];
+
+async function seedCategorias() {
+  for (const nombre of CATEGORIAS) {
+    const existe = await prisma.categoria.findFirst({ where: { nombre } });
+    if (!existe) {
+      await prisma.categoria.create({ data: { nombre, descripcion: 'Categoría base' } });
+      console.log(`Categoría creada: ${nombre}`);
     }
-    console.log("Categorias agregadas con éxito.");
-  } catch (error) {
-    console.error("Error", error);
-  } finally {
-    process.exit(0);
   }
 }
 
-populate();
+seedCategorias()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

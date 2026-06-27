@@ -1,84 +1,83 @@
-import pool from '../config/db';
+import prisma from '../config/db';
+import { Prisma } from '@prisma/client';
 import { validationResult } from 'express-validator';
 import { Request, Response, NextFunction } from 'express';
 
-// GET /api/productos  - listar con filtros opcionales
+// GET /api/productos
 export async function listar(req: Request, res: Response, next: NextFunction) {
   try {
     const { categoria_id, marca, genero, buscar, pagina = 1, limite = 12 } = req.query;
-    const offset = (parseInt(pagina as string) - 1) * parseInt(limite as string);
+    const take = parseInt(limite as string);
+    const skip = (parseInt(pagina as string) - 1) * take;
 
-    let query = `
-      SELECT p.id, p.nombre, p.descripcion, p.marca, p.codigo_sku,
-             p.precio_base, p.imagen_url, p.mercadolibre_url, p.genero,
-             c.nombre AS categoria
-      FROM productos p
-      JOIN categorias c ON p.categoria_id = c.id
-      WHERE p.activo = 1
-    `;
-    const params: any[] = [];
+    const where: Prisma.ProductoWhereInput = {
+      activo: true,
+      ...(categoria_id && { categoria_id: parseInt(categoria_id as string) }),
+      ...(marca && { marca: marca as string }),
+      ...(genero && { genero: genero as Prisma.EnumGeneroProductoFilter['equals'] }),
+      ...(buscar && {
+        OR: [
+          { nombre: { contains: buscar as string, mode: 'insensitive' } },
+          { descripcion: { contains: buscar as string, mode: 'insensitive' } },
+        ],
+      }),
+    };
 
-    if (categoria_id) {
-      query += ' AND p.categoria_id = ?';
-      params.push(categoria_id);
-    }
-    if (marca) {
-      query += ' AND p.marca = ?';
-      params.push(marca);
-    }
-    if (genero) {
-      query += ' AND p.genero = ?';
-      params.push(genero);
-    }
-    if (buscar) {
-      query += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ?)';
-      params.push(`%${buscar}%`, `%${buscar}%`);
-    }
+    const productos = await prisma.producto.findMany({
+      where,
+      orderBy: { id: 'desc' },
+      take,
+      skip,
+      include: {
+        categoria: { select: { nombre: true } },
+        variantes: {
+          select: { id: true, talla: true, color: true, stock: true, precio_extra: true },
+        },
+      },
+    });
 
-    query += ' ORDER BY p.id DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limite as string), offset);
+    const resultado = productos.map((p) => ({
+      id: p.id,
+      nombre: p.nombre,
+      descripcion: p.descripcion,
+      marca: p.marca,
+      codigo_sku: p.codigo_sku,
+      precio_base: p.precio_base,
+      imagen_url: p.imagen_url,
+      mercadolibre_url: p.mercadolibre_url,
+      genero: p.genero,
+      categoria: p.categoria?.nombre,
+      variantes: p.variantes,
+    }));
 
-    const [productos]: any = await pool.query(query, params);
-    
-    if (productos.length > 0) {
-      const productIds = productos.map((p: any) => p.id);
-      const [variantes]: any = await pool.query(
-        'SELECT producto_id, id, talla, color, stock, precio_extra FROM variantes WHERE producto_id IN (?)',
-        [productIds]
-      );
-      
-      productos.forEach((p: any) => {
-        p.variantes = variantes.filter((v: any) => v.producto_id === p.id);
-      });
-    }
-
-    res.json(productos);
+    res.json(resultado);
   } catch (err) {
     next(err);
   }
 }
 
-// GET /api/productos/:id  - detalle con variantes
+// GET /api/productos/:id
 export async function detalle(req: Request, res: Response, next: NextFunction) {
   try {
-    const [productos]: any = await pool.query(
-      `SELECT p.*, c.nombre AS categoria
-       FROM productos p
-       JOIN categorias c ON p.categoria_id = c.id
-       WHERE p.id = ? AND p.activo = 1`,
-      [req.params.id]
-    );
+    const producto = await prisma.producto.findFirst({
+      where: { id: parseInt(req.params.id), activo: true },
+      include: {
+        categoria: { select: { nombre: true } },
+        variantes: {
+          select: { id: true, talla: true, color: true, stock: true, precio_extra: true },
+        },
+      },
+    });
 
-    if (productos.length === 0) {
+    if (!producto) {
       return res.status(404).json({ error: 'Producto no encontrado.' });
     }
 
-    const [variantes] = await pool.query(
-      'SELECT id, talla, color, stock, precio_extra FROM variantes WHERE producto_id = ?',
-      [req.params.id]
-    );
-
-    res.json({ ...productos[0], variantes });
+    res.json({
+      ...producto,
+      categoria: producto.categoria?.nombre,
+      variantes: producto.variantes,
+    });
   } catch (err) {
     next(err);
   }
@@ -94,40 +93,43 @@ export async function crear(req: Request, res: Response, next: NextFunction) {
 
     const { categoria_id, nombre, descripcion, marca, codigo_sku,
             precio_base, mercadolibre_url, genero = 'unisex' } = req.body;
-            
-    // Obtener la imagen subida si existe
+
     const imagen_url = req.file ? `/${req.file.filename}` : req.body.imagen_url;
 
-    const [result]: any = await pool.query(
-      `INSERT INTO productos
-        (categoria_id, nombre, descripcion, marca, codigo_sku, precio_base, imagen_url, mercadolibre_url, genero)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [categoria_id, nombre, descripcion, marca, codigo_sku,
-       precio_base, imagen_url || null, mercadolibre_url || null, genero]
-    );
-
-    const productId = result.insertId;
-
-    let variantes = [];
+    let variantes: { talla?: string; stock?: number }[] = [];
     if (req.body.variantes) {
       try {
         variantes = JSON.parse(req.body.variantes);
       } catch (e) {}
     }
-    
     if (variantes.length === 0) {
       variantes = [{ talla: 'Único', stock: 10 }];
     }
 
-    for (const v of variantes) {
-      await pool.query(
-        `INSERT INTO variantes (producto_id, talla, color, stock, precio_extra)
-         VALUES (?, ?, 'Único', ?, 0)`,
-        [productId, v.talla || 'Único', v.stock || 0]
-      );
-    }
+    const producto = await prisma.producto.create({
+      data: {
+        categoria_id: parseInt(categoria_id),
+        nombre,
+        descripcion,
+        marca,
+        codigo_sku,
+        precio_base,
+        imagen_url: imagen_url || null,
+        mercadolibre_url: mercadolibre_url || null,
+        genero,
+        variantes: {
+          create: variantes.map((v) => ({
+            talla: v.talla || 'Único',
+            color: 'Único',
+            stock: v.stock || 0,
+            precio_extra: 0,
+          })),
+        },
+      },
+      select: { id: true },
+    });
 
-    res.status(201).json({ message: 'Producto creado.', id: productId });
+    res.status(201).json({ message: 'Producto creado.', id: producto.id });
   } catch (err) {
     next(err);
   }
@@ -141,47 +143,47 @@ export async function actualizar(req: Request, res: Response, next: NextFunction
       return res.status(400).json({ errores: errores.array() });
     }
 
-    const { nombre, descripcion, marca, precio_base,
-            mercadolibre_url, activo, genero } = req.body;
-            
-    // Si se sube un nuevo archivo, actualizar la ruta, si no, mantener la actual si viene en el body
+    const { nombre, descripcion, marca, precio_base, mercadolibre_url, activo, genero } = req.body;
+    const id = parseInt(req.params.id);
+
     let imagen_url = req.body.imagen_url;
     if (req.file) {
       imagen_url = `/${req.file.filename}`;
     }
 
-    await pool.query(
-      `UPDATE productos SET
-        nombre = COALESCE(?, nombre),
-        descripcion = COALESCE(?, descripcion),
-        marca = COALESCE(?, marca),
-        precio_base = COALESCE(?, precio_base),
-        imagen_url = COALESCE(?, imagen_url),
-        mercadolibre_url = COALESCE(?, mercadolibre_url),
-        activo = COALESCE(?, activo),
-        genero = COALESCE(?, genero)
-       WHERE id = ?`,
-      [nombre, descripcion, marca, precio_base, imagen_url,
-       mercadolibre_url, activo, genero, req.params.id]
-    );
+    const data: Prisma.ProductoUpdateInput = {};
+    if (nombre !== undefined) data.nombre = nombre;
+    if (descripcion !== undefined) data.descripcion = descripcion;
+    if (marca !== undefined) data.marca = marca;
+    if (precio_base !== undefined) data.precio_base = precio_base;
+    if (imagen_url !== undefined) data.imagen_url = imagen_url;
+    if (mercadolibre_url !== undefined) data.mercadolibre_url = mercadolibre_url;
+    if (activo !== undefined) data.activo = activo;
+    if (genero !== undefined) data.genero = genero;
 
-    if (req.body.variantes) {
-      try {
-        const variantes = JSON.parse(req.body.variantes);
-        if (variantes.length > 0) {
-          await pool.query('DELETE FROM variantes WHERE producto_id = ?', [req.params.id]);
-          for (const v of variantes) {
-            await pool.query(
-              `INSERT INTO variantes (producto_id, talla, color, stock, precio_extra)
-               VALUES (?, ?, 'Único', ?, 0)`,
-              [req.params.id, v.talla || 'Único', v.stock || 0]
-            );
+    await prisma.$transaction(async (tx) => {
+      await tx.producto.update({ where: { id }, data });
+
+      if (req.body.variantes) {
+        try {
+          const variantes = JSON.parse(req.body.variantes);
+          if (variantes.length > 0) {
+            await tx.variante.deleteMany({ where: { producto_id: id } });
+            await tx.variante.createMany({
+              data: variantes.map((v: { talla?: string; stock?: number }) => ({
+                producto_id: id,
+                talla: v.talla || 'Único',
+                color: 'Único',
+                stock: v.stock || 0,
+                precio_extra: 0,
+              })),
+            });
           }
+        } catch (e) {
+          console.error('Error parsing variantes in update', e);
         }
-      } catch (e) {
-        console.error("Error parsing variantes in update", e);
       }
-    }
+    });
 
     res.json({ message: 'Producto actualizado.' });
   } catch (err) {
@@ -192,7 +194,10 @@ export async function actualizar(req: Request, res: Response, next: NextFunction
 // DELETE /api/productos/:id  (solo admin - baja lógica)
 export async function eliminar(req: Request, res: Response, next: NextFunction) {
   try {
-    await pool.query('UPDATE productos SET activo = 0 WHERE id = ?', [req.params.id]);
+    await prisma.producto.update({
+      where: { id: parseInt(req.params.id) },
+      data: { activo: false },
+    });
     res.json({ message: 'Producto desactivado.' });
   } catch (err) {
     next(err);

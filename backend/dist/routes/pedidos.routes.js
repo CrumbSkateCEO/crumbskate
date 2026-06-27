@@ -9,4 +9,5 @@ router.post('/', pedidos_controller_1.crear);
 router.get('/', pedidos_controller_1.historial);
 router.get('/todos', auth_1.soloAdmin, pedidos_controller_1.todos);
 router.get('/:id', pedidos_controller_1.detalle);
+router.put('/:id/cancelar', pedidos_controller_1.cancelar);
 exports.default = router;

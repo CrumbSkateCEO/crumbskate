@@ -28,17 +28,18 @@ function registro(req, res, next) {
                 return res.status(400).json({ errores: errores.array() });
             }
             const { nombre, email, password, telefono } = req.body;
-            // Verificar si el email ya existe
-            const [existente] = yield db_1.default.query('SELECT id FROM usuarios WHERE email = ?', [email]);
-            if (existente.length > 0) {
+            const existente = yield db_1.default.usuario.findUnique({ where: { email } });
+            if (existente) {
                 return res.status(409).json({ error: 'El email ya está registrado.' });
             }
-            // Hashear contraseña (10 rondas = balance seguridad/velocidad)
             const hash = yield bcryptjs_1.default.hash(password, 10);
-            const [result] = yield db_1.default.query('INSERT INTO usuarios (nombre, email, password_hash, telefono) VALUES (?, ?, ?, ?)', [nombre, email, hash, telefono || null]);
+            const usuario = yield db_1.default.usuario.create({
+                data: { nombre, email, password_hash: hash, telefono: telefono || null },
+                select: { id: true },
+            });
             res.status(201).json({
                 message: 'Usuario registrado correctamente.',
-                id: result.insertId,
+                id: usuario.id,
             });
         }
         catch (err) {
@@ -55,12 +56,13 @@ function login(req, res, next) {
                 return res.status(400).json({ errores: errores.array() });
             }
             const { email, password } = req.body;
-            const [rows] = yield db_1.default.query('SELECT id, nombre, email, password_hash, rol FROM usuarios WHERE email = ?', [email]);
-            // Mismo mensaje para email o password incorrecto (evita enumerar usuarios)
-            if (rows.length === 0) {
+            const usuario = yield db_1.default.usuario.findUnique({
+                where: { email },
+                select: { id: true, nombre: true, email: true, password_hash: true, rol: true },
+            });
+            if (!usuario) {
                 return res.status(401).json({ error: 'Credenciales inválidas.' });
             }
-            const usuario = rows[0];
             const passwordValida = yield bcryptjs_1.default.compare(password, usuario.password_hash);
             if (!passwordValida) {
                 return res.status(401).json({ error: 'Credenciales inválidas.' });
@@ -87,11 +89,14 @@ function perfil(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         var _a;
         try {
-            const [rows] = yield db_1.default.query('SELECT id, nombre, email, telefono, rol, created_at FROM usuarios WHERE id = ?', [(_a = req.usuario) === null || _a === void 0 ? void 0 : _a.id]);
-            if (rows.length === 0) {
+            const usuario = yield db_1.default.usuario.findUnique({
+                where: { id: (_a = req.usuario) === null || _a === void 0 ? void 0 : _a.id },
+                select: { id: true, nombre: true, email: true, telefono: true, rol: true, created_at: true },
+            });
+            if (!usuario) {
                 return res.status(404).json({ error: 'Usuario no encontrado.' });
             }
-            res.json(rows[0]);
+            res.json(usuario);
         }
         catch (err) {
             next(err);

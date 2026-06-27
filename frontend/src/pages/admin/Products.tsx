@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useProducts } from "../../context/ProductContext";
 import api from "../../services/api";
+import { getAssetUrl } from "../../utils/assets";
 
 const AdminProducts = () => {
   const { user, isAdmin } = useAuth();
@@ -128,7 +129,7 @@ const AdminProducts = () => {
                       <div className="w-10 h-10 bg-base-200 rounded-md flex items-center justify-center shrink-0 border border-base-content/20 overflow-hidden">
                         {product.image ? (
                           <img 
-                            src={product.image.startsWith('http') ? product.image : `http://localhost:5000${product.image}`} 
+                            src={getAssetUrl(product.image)} 
                             alt={product.name} 
                             className="w-full h-full object-cover" 
                           />
@@ -248,7 +249,7 @@ const AdminProducts = () => {
                       {formData.image && (
                         <div className="w-10 h-10 bg-base-200 rounded overflow-hidden shrink-0">
                           <img 
-                            src={typeof formData.image === 'string' ? (formData.image.startsWith('http') ? formData.image : `http://localhost:5000${formData.image}`) : URL.createObjectURL(formData.image)} 
+                            src={typeof formData.image === 'string' ? getAssetUrl(formData.image) : URL.createObjectURL(formData.image)} 
                             alt="preview" 
                             className="w-full h-full object-cover" 
                           />

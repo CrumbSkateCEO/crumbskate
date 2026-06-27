@@ -1,43 +1,63 @@
 # CrumbSkate Backend
 
-API RESTful desarrollada con Node.js, Express y TypeScript. Esta API maneja toda la lógica de negocio, autenticación de usuarios y persistencia de datos (con MariaDB) para el e-commerce de CrumbSkate.
+API RESTful con Node.js, Express, TypeScript y **Prisma** (PostgreSQL / Neon).
 
 ## Requisitos
 
-- Node.js (v18 o superior)
-- MariaDB (o MySQL compatible)
+- Node.js 18+
+- Base de datos PostgreSQL en [Neon](https://neon.tech)
 
-## Configuración y Variables de Entorno
+## Configuración
 
-1. Crea un archivo `.env` en la raíz de `backend`.
-2. Completa las siguientes variables de entorno:
+1. Copiá `.env.example` a `.env`
+2. Pegá tu connection string de Neon en `DATABASE_URL`
 
 ```env
-PORT=5000
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=tu_password
-DB_NAME=crumbskate_db
-JWT_SECRET=super_secret_key_change_me
-JWT_EXPIRES_IN=24h
+DATABASE_URL=postgresql://user:pass@ep-xxx-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require
+JWT_SECRET=tu_secreto
+FRONTEND_URL=http://localhost:5173
 ```
 
-## Instalación
+## Base de datos (Prisma)
+
+```bash
+# Sincronizar schema con Neon (primera vez o cambios de modelo)
+npm run db:push
+
+# Datos iniciales (categorías, configuración)
+npm run db:seed
+
+# Probar conexión
+npm run db:test
+
+# UI visual de la DB
+npm run db:studio
+```
+
+Si ya tenés las tablas creadas con `db/schema-postgres.sql`, `db:push` las reconoce sin borrar datos.
+
+## Desarrollo
 
 ```bash
 npm install
+npm run dev
 ```
 
-## Scripts Disponibles
+## Producción
 
-- `npm run dev`: Inicia el servidor en modo desarrollo utilizando `nodemon` y `ts-node`.
-- `npm run build`: Transpila el código TypeScript a JavaScript en la carpeta `dist`.
-- `npm start`: Inicia el servidor en producción utilizando los archivos generados en `dist`.
+```bash
+npm run build
+npm start
+```
 
-## Tecnologías Principales
+En Render, el `buildCommand` ya incluye `prisma generate`.
 
-- Node.js & Express
-- TypeScript
-- MariaDB (mysql2 driver)
-- JSON Web Tokens (jsonwebtoken)
-- bcryptjs (para el hashing de contraseñas)
+## Scripts
+
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Servidor con hot-reload |
+| `npm run build` | Genera Prisma Client + compila TS |
+| `npm run db:push` | Sincroniza schema con la DB |
+| `npm run db:seed` | Inserta datos iniciales |
+| `npm run db:test` | Verifica conexión a Neon |

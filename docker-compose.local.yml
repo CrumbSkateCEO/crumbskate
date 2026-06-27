@@ -1,0 +1,42 @@
+# docker-compose.local.yml
+# Override para desarrollo LOCAL (sin internet / sin Neon)
+# Uso: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+#
+# Agrega un PostgreSQL local y sobreescribe DATABASE_URL del backend
+
+services:
+  # ============ BASE DE DATOS LOCAL ============
+  postgres:
+    image: postgres:16-alpine
+    container_name: crumbskate-postgres-local
+    restart: unless-stopped
+    networks:
+      - crumbskate-network
+    environment:
+      POSTGRES_USER: crumbskate_user
+      POSTGRES_PASSWORD: localpassword
+      POSTGRES_DB: crumbskate
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_local_data:/var/lib/postgresql/data
+      - ./db/schema-postgres.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crumbskate_user -d crumbskate"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Override del backend para que apunte al postgres local
+  backend:
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://crumbskate_user:localpassword@postgres:5432/crumbskate
+      NODE_ENV: development
+
+volumes:
+  pg_local_data:
+    driver: local

@@ -1,106 +1,105 @@
-import pool from '../config/db';
+import prisma from '../config/db';
 import { Request, Response, NextFunction } from 'express';
 
 // POST /api/pedidos  - crea un pedido desde el carrito
 export async function crear(req: Request, res: Response, next: NextFunction) {
-  const conn = await pool.getConnection();
   try {
-    await conn.beginTransaction(); // Todo o nada
+    const resultado = await prisma.$transaction(async (tx) => {
+      const carrito = await tx.carrito.findFirst({
+        where: { usuario_id: req.usuario?.id },
+      });
 
-    // Obtener carrito del usuario
-    const [carritos]: any = await conn.query(
-      'SELECT id FROM carrito WHERE usuario_id = ? LIMIT 1',
-      [req.usuario?.id]
-    );
-    if (carritos.length === 0) {
-      return res.status(400).json({ error: 'No tenés un carrito activo.' });
-    }
-
-    const carritoId = carritos[0].id;
-
-    // Obtener items del carrito
-    const [items]: any = await conn.query(
-      `SELECT ci.variante_id, ci.cantidad,
-              v.stock, v.precio_extra,
-              p.precio_base
-       FROM carrito_items ci
-       JOIN variantes v ON ci.variante_id = v.id
-       JOIN productos p ON v.producto_id = p.id
-       WHERE ci.carrito_id = ?`,
-      [carritoId]
-    );
-
-    if (items.length === 0) {
-      return res.status(400).json({ error: 'El carrito está vacío.' });
-    }
-
-    // Verificar stock de cada item
-    for (const item of items) {
-      if (item.stock < item.cantidad) {
-        await conn.rollback();
-        return res.status(400).json({ error: 'Stock insuficiente para uno o más productos.' });
+      if (!carrito) {
+        throw Object.assign(new Error('No tenés un carrito activo.'), { statusCode: 400 });
       }
+
+      const items = await tx.carritoItem.findMany({
+        where: { carrito_id: carrito.id },
+        include: {
+          variante: { include: { producto: { select: { precio_base: true } } } },
+        },
+      });
+
+      if (items.length === 0) {
+        throw Object.assign(new Error('El carrito está vacío.'), { statusCode: 400 });
+      }
+
+      for (const item of items) {
+        if (item.variante.stock < item.cantidad) {
+          throw Object.assign(new Error('Stock insuficiente para uno o más productos.'), { statusCode: 400 });
+        }
+      }
+
+      const total = items.reduce((acc, item) => {
+        const precio = Number(item.variante.producto.precio_base) + Number(item.variante.precio_extra);
+        return acc + precio * item.cantidad;
+      }, 0);
+
+      const pedido = await tx.pedido.create({
+        data: {
+          usuario_id: req.usuario!.id,
+          total,
+          estado: 'pendiente',
+        },
+      });
+
+      for (const item of items) {
+        const precioUnitario = Number(item.variante.producto.precio_base) + Number(item.variante.precio_extra);
+        await tx.pedidoItem.create({
+          data: {
+            pedido_id: pedido.id,
+            variante_id: item.variante_id,
+            cantidad: item.cantidad,
+            precio_unitario: precioUnitario,
+          },
+        });
+        await tx.variante.update({
+          where: { id: item.variante_id },
+          data: { stock: { decrement: item.cantidad } },
+        });
+      }
+
+      await tx.pago.create({
+        data: { pedido_id: pedido.id, estado: 'pendiente', monto: total },
+      });
+
+      await tx.carritoItem.deleteMany({ where: { carrito_id: carrito.id } });
+
+      return { pedidoId: pedido.id, total };
+    });
+
+    res.status(201).json({
+      message: 'Pedido creado.',
+      pedidoId: resultado.pedidoId,
+      total: Number(resultado.total).toFixed(2),
+    });
+  } catch (err: any) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
     }
-
-    // Calcular total
-    const total = items.reduce(
-      (acc: number, i: any) => acc + (parseFloat(i.precio_base) + parseFloat(i.precio_extra)) * i.cantidad,
-      0
-    );
-
-    // Crear pedido
-    const [pedido]: any = await conn.query(
-      "INSERT INTO pedidos (usuario_id, total, estado) VALUES (?, ?, 'pendiente')",
-      [req.usuario?.id, total.toFixed(2)]
-    );
-    const pedidoId = pedido.insertId;
-
-    // Insertar items del pedido y descontar stock
-    for (const item of items) {
-      const precioUnitario = parseFloat(item.precio_base) + parseFloat(item.precio_extra);
-      await conn.query(
-        'INSERT INTO pedido_items (pedido_id, variante_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?)',
-        [pedidoId, item.variante_id, item.cantidad, precioUnitario]
-      );
-      await conn.query(
-        'UPDATE variantes SET stock = stock - ? WHERE id = ?',
-        [item.cantidad, item.variante_id]
-      );
-    }
-
-    // Registrar pago pendiente
-    await conn.query(
-      "INSERT INTO pagos (pedido_id, estado, monto) VALUES (?, 'pendiente', ?)",
-      [pedidoId, total.toFixed(2)]
-    );
-
-    // Vaciar carrito
-    await conn.query('DELETE FROM carrito_items WHERE carrito_id = ?', [carritoId]);
-
-    await conn.commit();
-    res.status(201).json({ message: 'Pedido creado.', pedidoId, total: total.toFixed(2) });
-  } catch (err) {
-    await conn.rollback();
     next(err);
-  } finally {
-    conn.release();
   }
 }
 
 // GET /api/pedidos  - historial del usuario
 export async function historial(req: Request, res: Response, next: NextFunction) {
   try {
-    const [pedidos] = await pool.query(
-      `SELECT p.id, p.estado, p.total, p.ml_order_id, p.created_at,
-              COUNT(pi.id) AS cantidad_items
-       FROM pedidos p
-       LEFT JOIN pedido_items pi ON p.id = pi.pedido_id
-       WHERE p.usuario_id = ?
-       GROUP BY p.id
-       ORDER BY p.created_at DESC`,
-      [req.usuario?.id]
+    const pedidos = await prisma.pedido.findMany({
+      where: { usuario_id: req.usuario?.id },
+      orderBy: { created_at: 'desc' },
+      include: { _count: { select: { items: true } } },
+    });
+
+    res.json(
+      pedidos.map((p) => ({
+        id: p.id,
+        estado: p.estado,
+        total: p.total,
+        ml_order_id: p.ml_order_id,
+        created_at: p.created_at,
+        cantidad_items: p._count.items,
+      }))
     );
-    res.json(pedidos);
   } catch (err) {
     next(err);
   }
@@ -109,25 +108,33 @@ export async function historial(req: Request, res: Response, next: NextFunction)
 // GET /api/pedidos/:id  - detalle de un pedido
 export async function detalle(req: Request, res: Response, next: NextFunction) {
   try {
-    const [pedidos]: any = await pool.query(
-      'SELECT * FROM pedidos WHERE id = ? AND usuario_id = ?',
-      [req.params.id, req.usuario?.id]
-    );
-    if (pedidos.length === 0) {
+    const pedido = await prisma.pedido.findFirst({
+      where: { id: parseInt(req.params.id), usuario_id: req.usuario?.id },
+      include: {
+        items: {
+          include: {
+            variante: {
+              include: { producto: { select: { nombre: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    if (!pedido) {
       return res.status(404).json({ error: 'Pedido no encontrado.' });
     }
 
-    const [items] = await pool.query(
-      `SELECT pi.cantidad, pi.precio_unitario,
-              p.nombre, v.talla, v.color
-       FROM pedido_items pi
-       JOIN variantes v ON pi.variante_id = v.id
-       JOIN productos p ON v.producto_id = p.id
-       WHERE pi.pedido_id = ?`,
-      [req.params.id]
-    );
+    const items = pedido.items.map((pi) => ({
+      cantidad: pi.cantidad,
+      precio_unitario: pi.precio_unitario,
+      nombre: pi.variante?.producto.nombre,
+      talla: pi.variante?.talla,
+      color: pi.variante?.color,
+    }));
 
-    res.json({ ...pedidos[0], items });
+    const { items: _, ...pedidoData } = pedido;
+    res.json({ ...pedidoData, items });
   } catch (err) {
     next(err);
   }
@@ -136,13 +143,23 @@ export async function detalle(req: Request, res: Response, next: NextFunction) {
 // GET /api/pedidos/todos  - todos los pedidos (solo admin)
 export async function todos(req: Request, res: Response, next: NextFunction) {
   try {
-    const [pedidos] = await pool.query(
-      `SELECT p.id, p.estado, p.total, p.created_at, u.nombre as cliente, u.email
-       FROM pedidos p
-       JOIN usuarios u ON p.usuario_id = u.id
-       ORDER BY p.created_at DESC`
+    const pedidos = await prisma.pedido.findMany({
+      orderBy: { created_at: 'desc' },
+      include: {
+        usuario: { select: { nombre: true, email: true } },
+      },
+    });
+
+    res.json(
+      pedidos.map((p) => ({
+        id: p.id,
+        estado: p.estado,
+        total: p.total,
+        created_at: p.created_at,
+        cliente: p.usuario.nombre,
+        email: p.usuario.email,
+      }))
     );
-    res.json(pedidos);
   } catch (err) {
     next(err);
   }
@@ -150,49 +167,45 @@ export async function todos(req: Request, res: Response, next: NextFunction) {
 
 // PUT /api/pedidos/:id/cancelar
 export async function cancelar(req: Request, res: Response, next: NextFunction) {
-  const conn = await pool.getConnection();
   try {
-    await conn.beginTransaction();
+    await prisma.$transaction(async (tx) => {
+      const pedido = await tx.pedido.findFirst({
+        where: { id: parseInt(req.params.id), usuario_id: req.usuario?.id },
+      });
 
-    const [pedidos]: any = await conn.query(
-      'SELECT estado FROM pedidos WHERE id = ? AND usuario_id = ? FOR UPDATE',
-      [req.params.id, req.usuario?.id]
-    );
+      if (!pedido) {
+        throw Object.assign(new Error('Pedido no encontrado.'), { statusCode: 404 });
+      }
 
-    if (pedidos.length === 0) {
-      await conn.rollback();
-      return res.status(404).json({ error: 'Pedido no encontrado.' });
-    }
+      if (pedido.estado !== 'pendiente') {
+        throw Object.assign(new Error('Solo se pueden cancelar pedidos pendientes.'), { statusCode: 400 });
+      }
 
-    if (pedidos[0].estado !== 'pendiente') {
-      await conn.rollback();
-      return res.status(400).json({ error: 'Solo se pueden cancelar pedidos pendientes.' });
-    }
+      await tx.pedido.update({
+        where: { id: pedido.id },
+        data: { estado: 'cancelado' },
+      });
 
-    await conn.query(
-      "UPDATE pedidos SET estado = 'cancelado' WHERE id = ?",
-      [req.params.id]
-    );
+      const items = await tx.pedidoItem.findMany({
+        where: { pedido_id: pedido.id },
+        select: { variante_id: true, cantidad: true },
+      });
 
-    // Devolver el stock
-    const [items]: any = await conn.query(
-      'SELECT variante_id, cantidad FROM pedido_items WHERE pedido_id = ?',
-      [req.params.id]
-    );
+      for (const item of items) {
+        if (item.variante_id) {
+          await tx.variante.update({
+            where: { id: item.variante_id },
+            data: { stock: { increment: item.cantidad } },
+          });
+        }
+      }
+    });
 
-    for (const item of items) {
-      await conn.query(
-        'UPDATE variantes SET stock = stock + ? WHERE id = ?',
-        [item.cantidad, item.variante_id]
-      );
-    }
-
-    await conn.commit();
     res.json({ message: 'Pedido cancelado exitosamente.' });
-  } catch (err) {
-    await conn.rollback();
+  } catch (err: any) {
+    if (err.statusCode) {
+      return res.status(err.statusCode).json({ error: err.message });
+    }
     next(err);
-  } finally {
-    conn.release();
   }
 }

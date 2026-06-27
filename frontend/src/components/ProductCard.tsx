@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Product } from "../types";
+import { getAssetUrl } from "../utils/assets";
 
 const formatPrice = (n: number) =>
   new Intl.NumberFormat("es-AR", {
@@ -86,7 +87,7 @@ const ProductCard = ({ product, onAddToCart, isAdded }: ProductCardProps) => {
       <figure className="h-44 sm:h-56 overflow-hidden bg-base-300 relative flex items-center justify-center flex-shrink-0">
         {product.image ? (
           <img
-            src={product.image.startsWith('http') ? product.image : `http://localhost:5000${product.image}`}
+            src={getAssetUrl(product.image)}
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           />
@@ -167,7 +168,7 @@ const ProductCard = ({ product, onAddToCart, isAdded }: ProductCardProps) => {
                     onClick={(e) =>
                       hasMultipleSizes && handleSizeClick(e, size)
                     }
-                    className={`h-9 min-w-[36px] px-2 text-xs font-impact tracking-wider transition-all duration-300 border-2 rounded-none flex items-center justify-center ${
+                    className={`min-h-10 h-10 min-w-[40px] px-2 text-xs font-impact tracking-wider transition-all duration-300 border-2 rounded-none flex items-center justify-center touch-manipulation ${
                       isSelected
                         ? "bg-primary border-black text-primary-content shadow-brutal-sm scale-105 z-10"
                         : hasMultipleSizes
@@ -215,12 +216,12 @@ const ProductCard = ({ product, onAddToCart, isAdded }: ProductCardProps) => {
             <button
               onClick={handleAddClick}
               disabled={isAdded || (hasMultipleSizes && !selectedSize)}
-              className={`group/btn relative overflow-hidden h-14 transition-all duration-300 font-impact uppercase tracking-[0.2em] text-sm border-2 border-black rounded-none ${
+              className={`group/btn relative overflow-hidden min-h-14 h-14 transition-all duration-300 font-impact uppercase tracking-[0.2em] text-sm border-2 border-black rounded-none touch-manipulation ${
                 isAdded
                   ? "bg-primary text-primary-content cursor-default shadow-brutal-sm"
                   : hasMultipleSizes && !selectedSize
                     ? "bg-base-300/30 text-base-content/20 cursor-not-allowed"
-                    : "bg-primary text-primary-content shadow-brutal hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] active:translate-x-[8px] active:translate-y-[8px] active:shadow-none"
+                    : "bg-primary text-primary-content shadow-brutal md:hover:shadow-none md:hover:translate-x-[4px] md:hover:translate-y-[4px] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none"
               }`}
             >
               <span className="relative z-10 flex items-center justify-center gap-2">

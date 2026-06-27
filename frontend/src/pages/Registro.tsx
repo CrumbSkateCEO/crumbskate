@@ -9,6 +9,7 @@ const Registro = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState("");
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -23,6 +24,10 @@ const Registro = () => {
     }
     if (password !== confirmPassword) {
       setError("Las contraseñas no coinciden.");
+      return;
+    }
+    if (!termsAccepted) {
+      setError("Debés aceptar los términos y condiciones.");
       return;
     }
 
@@ -159,6 +164,8 @@ const Registro = () => {
                 <input
                   id="register-terms"
                   type="checkbox"
+                  checked={termsAccepted}
+                  onChange={e => setTermsAccepted(e.target.checked)}
                   className="checkbox checkbox-sm border-2 border-primary/30 rounded-none [--chkbg:theme(colors.primary)] [--chkfg:white]"
                 />
                 <span className="text-base-content/60 text-xs font-mono">

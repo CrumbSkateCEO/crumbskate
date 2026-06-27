@@ -8,6 +8,9 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Profile from "./pages/Profile";
 import OrderDetail from "./pages/OrderDetail";
+import ResetPassword from "./pages/ResetPassword";
+import NuevaContrasena from "./pages/NuevaContrasena";
+import Terminos from "./pages/Terminos";
 
 import AdminLayout from "./layout/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -43,6 +46,9 @@ function App() {
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/perfil" element={<Profile />} />
               <Route path="/pedido/:id" element={<OrderDetail />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/nueva-contrasena/:token" element={<NuevaContrasena />} />
+              <Route path="/terminos" element={<Terminos />} />
             </Route>
 
             {/* Rutas de Administración (Protegidas) */}

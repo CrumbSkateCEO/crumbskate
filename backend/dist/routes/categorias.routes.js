@@ -4,5 +4,7 @@ const express_1 = require("express");
 const categorias_controller_1 = require("../controllers/categorias.controller");
 const router = (0, express_1.Router)();
 router.get('/', categorias_controller_1.listar);
-router.post('/', categorias_controller_1.crear); // (solo admin) Nota: no hay middleware en la ruta original, se podría agregar
+router.post('/', categorias_controller_1.crear);
+router.put('/:id', categorias_controller_1.actualizar);
+router.delete('/:id', categorias_controller_1.eliminar);
 exports.default = router;

@@ -17,14 +17,19 @@ exports.agregar = agregar;
 exports.eliminarItem = eliminarItem;
 exports.vaciar = vaciar;
 const db_1 = __importDefault(require("../config/db"));
-// Obtiene o crea el carrito activo del usuario
 function obtenerOCrearCarrito(usuarioId) {
     return __awaiter(this, void 0, void 0, function* () {
-        const [carritos] = yield db_1.default.query('SELECT id FROM carrito WHERE usuario_id = ? LIMIT 1', [usuarioId]);
-        if (carritos.length > 0)
-            return carritos[0].id;
-        const [result] = yield db_1.default.query('INSERT INTO carrito (usuario_id) VALUES (?)', [usuarioId]);
-        return result.insertId;
+        const existente = yield db_1.default.carrito.findUnique({
+            where: { usuario_id: usuarioId },
+            select: { id: true },
+        });
+        if (existente)
+            return existente.id;
+        const carrito = yield db_1.default.carrito.create({
+            data: { usuario_id: usuarioId },
+            select: { id: true },
+        });
+        return carrito.id;
     });
 }
 // GET /api/carrito
@@ -33,16 +38,34 @@ function ver(req, res, next) {
         var _a;
         try {
             const carritoId = yield obtenerOCrearCarrito((_a = req.usuario) === null || _a === void 0 ? void 0 : _a.id);
-            const [items] = yield db_1.default.query(`SELECT ci.id, ci.cantidad,
-              v.talla, v.color, v.precio_extra,
-              p.nombre, p.precio_base, p.imagen_url,
-              (p.precio_base + v.precio_extra) * ci.cantidad AS subtotal
-       FROM carrito_items ci
-       JOIN variantes v ON ci.variante_id = v.id
-       JOIN productos p ON v.producto_id = p.id
-       WHERE ci.carrito_id = ?`, [carritoId]);
-            const total = items.reduce((acc, i) => acc + parseFloat(i.subtotal), 0);
-            res.json({ carritoId, items, total: total.toFixed(2) });
+            const items = yield db_1.default.carritoItem.findMany({
+                where: { carrito_id: carritoId },
+                include: {
+                    variante: {
+                        include: {
+                            producto: { select: { nombre: true, precio_base: true, imagen_url: true } },
+                        },
+                    },
+                },
+            });
+            const resultado = items.map((ci) => {
+                const precioBase = Number(ci.variante.producto.precio_base);
+                const precioExtra = Number(ci.variante.precio_extra);
+                const subtotal = (precioBase + precioExtra) * ci.cantidad;
+                return {
+                    id: ci.id,
+                    cantidad: ci.cantidad,
+                    talla: ci.variante.talla,
+                    color: ci.variante.color,
+                    precio_extra: ci.variante.precio_extra,
+                    nombre: ci.variante.producto.nombre,
+                    precio_base: ci.variante.producto.precio_base,
+                    imagen_url: ci.variante.producto.imagen_url,
+                    subtotal: subtotal.toFixed(2),
+                };
+            });
+            const total = resultado.reduce((acc, i) => acc + parseFloat(i.subtotal), 0);
+            res.json({ carritoId, items: resultado, total: total.toFixed(2) });
         }
         catch (err) {
             next(err);
@@ -57,22 +80,30 @@ function agregar(req, res, next) {
             const { variante_id, cantidad = 1 } = req.body;
             if (!variante_id)
                 return res.status(400).json({ error: 'variante_id requerido.' });
-            // Verificar stock disponible
-            const [variantes] = yield db_1.default.query('SELECT stock FROM variantes WHERE id = ?', [variante_id]);
-            if (variantes.length === 0) {
+            const variante = yield db_1.default.variante.findUnique({
+                where: { id: variante_id },
+                select: { stock: true },
+            });
+            if (!variante) {
                 return res.status(404).json({ error: 'Variante no encontrada.' });
             }
-            if (variantes[0].stock < cantidad) {
+            if (variante.stock < cantidad) {
                 return res.status(400).json({ error: 'Stock insuficiente.' });
             }
             const carritoId = yield obtenerOCrearCarrito((_a = req.usuario) === null || _a === void 0 ? void 0 : _a.id);
-            // Si ya existe el item, incrementar cantidad
-            const [existente] = yield db_1.default.query('SELECT id, cantidad FROM carrito_items WHERE carrito_id = ? AND variante_id = ?', [carritoId, variante_id]);
-            if (existente.length > 0) {
-                yield db_1.default.query('UPDATE carrito_items SET cantidad = cantidad + ? WHERE id = ?', [cantidad, existente[0].id]);
+            const existente = yield db_1.default.carritoItem.findFirst({
+                where: { carrito_id: carritoId, variante_id },
+            });
+            if (existente) {
+                yield db_1.default.carritoItem.update({
+                    where: { id: existente.id },
+                    data: { cantidad: { increment: cantidad } },
+                });
             }
             else {
-                yield db_1.default.query('INSERT INTO carrito_items (carrito_id, variante_id, cantidad) VALUES (?, ?, ?)', [carritoId, variante_id, cantidad]);
+                yield db_1.default.carritoItem.create({
+                    data: { carrito_id: carritoId, variante_id, cantidad },
+                });
             }
             res.json({ message: 'Producto agregado al carrito.' });
         }
@@ -87,7 +118,9 @@ function eliminarItem(req, res, next) {
         var _a;
         try {
             const carritoId = yield obtenerOCrearCarrito((_a = req.usuario) === null || _a === void 0 ? void 0 : _a.id);
-            yield db_1.default.query('DELETE FROM carrito_items WHERE id = ? AND carrito_id = ?', [req.params.itemId, carritoId]);
+            yield db_1.default.carritoItem.deleteMany({
+                where: { id: parseInt(req.params.itemId), carrito_id: carritoId },
+            });
             res.json({ message: 'Item eliminado del carrito.' });
         }
         catch (err) {
@@ -101,7 +134,7 @@ function vaciar(req, res, next) {
         var _a;
         try {
             const carritoId = yield obtenerOCrearCarrito((_a = req.usuario) === null || _a === void 0 ? void 0 : _a.id);
-            yield db_1.default.query('DELETE FROM carrito_items WHERE carrito_id = ?', [carritoId]);
+            yield db_1.default.carritoItem.deleteMany({ where: { carrito_id: carritoId } });
             res.json({ message: 'Carrito vaciado.' });
         }
         catch (err) {

@@ -1,0 +1,12 @@
+NODE_ENV=development
+
+# PostgreSQL / Neon
+# Reemplazá esta URL con la que obtenés de neon.tech (Settings > Connection string)
+DATABASE_URL=postgresql://neondb_owner:npg_NkZQ7q6bsYJG@ep-spring-poetry-acpshkqd-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require
+
+# Seguridad
+JWT_SECRET=crumbskate_secret_key_2024_change_this_in_production
+JWT_EXPIRES_IN=24h
+
+# Frontend URL (CORS)
+FRONTEND_URL=http://localhost:5173

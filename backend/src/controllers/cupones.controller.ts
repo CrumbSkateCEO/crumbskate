@@ -1,10 +1,11 @@
-import pool from '../config/db';
+import prisma from '../config/db';
+import { Prisma } from '@prisma/client';
 import { Request, Response, NextFunction } from 'express';
 
 // GET /api/cupones
 export async function listar(req: Request, res: Response, next: NextFunction) {
   try {
-    const [cupones] = await pool.query('SELECT * FROM cupones ORDER BY created_at DESC');
+    const cupones = await prisma.cupon.findMany({ orderBy: { created_at: 'desc' } });
     res.json(cupones);
   } catch (err) {
     next(err);
@@ -15,18 +16,22 @@ export async function listar(req: Request, res: Response, next: NextFunction) {
 export async function crear(req: Request, res: Response, next: NextFunction) {
   try {
     const { codigo, descuento_porcentaje, valido_hasta } = req.body;
-    
+
     if (!codigo || !descuento_porcentaje) {
       return res.status(400).json({ error: 'Código y descuento son requeridos.' });
     }
 
-    const [result]: any = await pool.query(
-      'INSERT INTO cupones (codigo, descuento_porcentaje, valido_hasta) VALUES (?, ?, ?)',
-      [codigo.toUpperCase(), descuento_porcentaje, valido_hasta || null]
-    );
-    res.status(201).json({ message: 'Cupón creado', id: result.insertId });
-  } catch (err: any) {
-    if (err.code === 'ER_DUP_ENTRY') {
+    const cupon = await prisma.cupon.create({
+      data: {
+        codigo: codigo.toUpperCase(),
+        descuento_porcentaje,
+        valido_hasta: valido_hasta ? new Date(valido_hasta) : null,
+      },
+      select: { id: true },
+    });
+    res.status(201).json({ message: 'Cupón creado', id: cupon.id });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       return res.status(400).json({ error: 'El código ya existe.' });
     }
     next(err);
@@ -37,19 +42,20 @@ export async function crear(req: Request, res: Response, next: NextFunction) {
 export async function actualizar(req: Request, res: Response, next: NextFunction) {
   try {
     const { codigo, descuento_porcentaje, valido_hasta, activo } = req.body;
-    
-    await pool.query(
-      `UPDATE cupones SET 
-       codigo = COALESCE(?, codigo),
-       descuento_porcentaje = COALESCE(?, descuento_porcentaje),
-       valido_hasta = COALESCE(?, valido_hasta),
-       activo = COALESCE(?, activo)
-       WHERE id = ?`,
-      [codigo?.toUpperCase(), descuento_porcentaje, valido_hasta, activo, req.params.id]
-    );
+    const data: Prisma.CuponUpdateInput = {};
+
+    if (codigo !== undefined) data.codigo = codigo.toUpperCase();
+    if (descuento_porcentaje !== undefined) data.descuento_porcentaje = descuento_porcentaje;
+    if (valido_hasta !== undefined) data.valido_hasta = valido_hasta ? new Date(valido_hasta) : null;
+    if (activo !== undefined) data.activo = activo;
+
+    await prisma.cupon.update({
+      where: { id: parseInt(req.params.id) },
+      data,
+    });
     res.json({ message: 'Cupón actualizado' });
-  } catch (err: any) {
-    if (err.code === 'ER_DUP_ENTRY') {
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       return res.status(400).json({ error: 'El código ya existe.' });
     }
     next(err);
@@ -59,7 +65,7 @@ export async function actualizar(req: Request, res: Response, next: NextFunction
 // DELETE /api/cupones/:id
 export async function eliminar(req: Request, res: Response, next: NextFunction) {
   try {
-    await pool.query('DELETE FROM cupones WHERE id = ?', [req.params.id]);
+    await prisma.cupon.delete({ where: { id: parseInt(req.params.id) } });
     res.json({ message: 'Cupón eliminado' });
   } catch (err) {
     next(err);
@@ -74,28 +80,26 @@ export async function validar(req: Request, res: Response, next: NextFunction) {
       return res.status(400).json({ error: 'El código es requerido.' });
     }
 
-    const [cupones]: any = await pool.query(
-      'SELECT descuento_porcentaje, valido_hasta, activo FROM cupones WHERE codigo = ?',
-      [codigo.toUpperCase()]
-    );
+    const cupon = await prisma.cupon.findUnique({
+      where: { codigo: codigo.toUpperCase() },
+      select: { descuento_porcentaje: true, valido_hasta: true, activo: true },
+    });
 
-    if (cupones.length === 0) {
+    if (!cupon) {
       return res.status(404).json({ error: 'Cupón inválido.' });
     }
 
-    const cupon = cupones[0];
-
-    if (cupon.activo === 0) {
+    if (!cupon.activo) {
       return res.status(400).json({ error: 'El cupón ya no está activo.' });
     }
 
-    if (cupon.valido_hasta && new Date(cupon.valido_hasta) < new Date()) {
+    if (cupon.valido_hasta && cupon.valido_hasta < new Date()) {
       return res.status(400).json({ error: 'El cupón ha expirado.' });
     }
 
     res.json({
       valido: true,
-      descuento_porcentaje: cupon.descuento_porcentaje
+      descuento_porcentaje: cupon.descuento_porcentaje,
     });
   } catch (err) {
     next(err);

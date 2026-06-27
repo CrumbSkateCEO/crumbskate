@@ -36,13 +36,25 @@ const errorHandler_1 = __importDefault(require("./middlewares/errorHandler"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean);
 // Middlewares de Seguridad
 const corsOptions = {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+        callback(new Error(`CORS: origen no permitido (${origin})`));
+    },
     credentials: true,
 };
 app.use((0, cors_1.default)(corsOptions));
-app.use((0, helmet_1.default)()); // Añade cabeceras HTTP de seguridad
+app.use((0, helmet_1.default)({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+})); // Añade cabeceras HTTP de seguridad pero permite cargar imágenes en el frontend
 const limiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 100, // Límite de 100 peticiones por IP cada 15 min
@@ -51,11 +63,19 @@ const limiter = (0, express_rate_limit_1.default)({
 app.use('/api/', limiter); // Aplica el límite a todas las rutas de la API
 const path_1 = __importDefault(require("path"));
 app.use(express_1.default.json());
-app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../uploads')));
+app.use('/', express_1.default.static(path_1.default.join(__dirname, '../uploads'), {
+    setHeaders: (res, filePath) => {
+        // Si el archivo no tiene extensión, forzamos un Content-Type de imagen
+        // para que el navegador lo interprete correctamente a pesar del header "nosniff"
+        if (!filePath.includes('.')) {
+            res.set('Content-Type', 'image/jpeg');
+        }
+    }
+}));
 // 1. Health check route
 app.get('/api/health', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield db_1.default.query('SELECT 1');
+        yield db_1.default.$queryRaw `SELECT 1`;
         res.status(200).json({
             status: 'ok',
             message: 'Server is running and Database is connected',
