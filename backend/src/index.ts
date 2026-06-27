@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import pool from './config/db';
+import prisma from './config/db';
 
 // Import Routes
 import authRoutes from './routes/auth.routes';
@@ -18,6 +18,7 @@ import configuracionRoutes from './routes/configuracion.routes';
 import usuariosRoutes from './routes/usuarios.routes';
 import stockRoutes from './routes/stock.routes';
 import reportesRoutes from './routes/reportes.routes';
+import newsletterRoutes from './routes/newsletter.routes';
 
 // Import Error Handler
 import errorHandler from './middlewares/errorHandler';
@@ -27,9 +28,30 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
+  .split(',')
+  .map((url) => url.trim())
+  .filter(Boolean);
+
+function isOriginAllowed(origin: string | undefined): boolean {
+  if (!origin) return true;
+  if (allowedOrigins.includes(origin)) return true;
+  // Vercel: producción (crumbskate.vercel.app) y previews por deploy
+  if (process.env.NODE_ENV === 'production' && /^https:\/\/[\w.-]+\.vercel\.app$/.test(origin)) {
+    return true;
+  }
+  return false;
+}
+
 // Middlewares de Seguridad
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    if (isOriginAllowed(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error(`CORS: origen no permitido (${origin})`));
+  },
   credentials: true,
 };
 app.use(cors(corsOptions));
@@ -57,21 +79,44 @@ app.use('/', express.static(path.join(__dirname, '../uploads'), {
   }
 }));
 
-// 1. Health check route
-app.get('/api/health', async (req: Request, res: Response) => {
+// Raíz y health — UptimeRobot y Render suelen pegarle a GET/HEAD /
+app.get('/', (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'ok',
+    service: 'CrumbSkate API',
+    health: '/api/health',
+  });
+});
+
+app.head('/', (_req: Request, res: Response) => {
+  res.status(200).end();
+});
+
+async function healthCheck(_req: Request, res: Response) {
   try {
-    await pool.query('SELECT 1');
+    await prisma.$queryRaw`SELECT 1`;
     res.status(200).json({
       status: 'ok',
       message: 'Server is running and Database is connected',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Database connection failed:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Server is running but Database connection failed'
+      message: 'Server is running but Database connection failed',
     });
+  }
+}
+
+app.get('/api/health', healthCheck);
+
+app.head('/api/health', async (_req: Request, res: Response) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).end();
+  } catch {
+    res.status(500).end();
   }
 });
 
@@ -88,6 +133,7 @@ app.use('/api/configuracion', configuracionRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/stock', stockRoutes);
 app.use('/api/reportes', reportesRoutes);
+app.use('/api/newsletter', newsletterRoutes);
 
 // Manejo centralizado de errores (debe ser el último middleware)
 app.use(errorHandler);
