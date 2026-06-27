@@ -94,12 +94,12 @@ const AdminSettings = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="form-control w-full">
-              <label className="label font-black uppercase tracking-widest text-xs opacity-60">Teléfono</label>
+              <label className="label font-black uppercase tracking-widest text-xs opacity-60">Link de YouTube</label>
               <input 
-                type="text" 
+                type="url" 
                 className="input input-lg input-bordered font-bold font-mono" 
-                value={config.telefono_contacto || ""}
-                onChange={(e) => setConfig({...config, telefono_contacto: e.target.value})}
+                value={config.youtube_url || ""}
+                onChange={(e) => setConfig({...config, youtube_url: e.target.value})}
               />
             </div>
             <div className="form-control w-full">

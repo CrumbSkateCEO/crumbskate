@@ -132,7 +132,7 @@ LOCK TABLES `configuracion` WRITE;
 /*!40000 ALTER TABLE `configuracion` DISABLE KEYS */;
 INSERT INTO `configuracion` VALUES
 (1,'costo_envio','5000','2026-05-16 22:45:30'),
-(3,'telefono_contacto','+54 9 11 1234 5678','2026-05-20 14:17:07'),
+(3,'youtube_url','https://youtube.com/@crumbskate','2026-05-20 14:17:07'),
 (4,'email_contacto','contacto@crumbskate.com','2026-05-20 14:17:07'),
 (5,'instagram_url','https://instagram.com/crumbskate','2026-05-20 14:17:07'),
 (6,'envio_gratis_desde','50000','2026-05-20 14:17:07'),

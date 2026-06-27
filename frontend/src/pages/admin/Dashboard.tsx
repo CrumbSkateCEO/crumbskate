@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useProducts } from "../../context/ProductContext";
 import api from "../../services/api";
+import { getAssetUrl } from "../../utils/assets";
 import { 
   MdShoppingBag, 
   MdShoppingCart, 
@@ -52,7 +53,7 @@ const Dashboard = () => {
   const channelData = [
     { name: 'Tienda online', value: 65, color: '#7c3aed' },
     { name: 'Instagram', value: 20, color: '#db2777' },
-    { name: 'WhatsApp', value: 10, color: '#10b981' },
+    { name: 'YouTube', value: 10, color: '#ff0000' },
     { name: 'Otros', value: 5, color: '#f59e0b' },
   ];
 
@@ -184,7 +185,7 @@ const Dashboard = () => {
                   <span className="font-bold opacity-40 w-4 text-center">{idx + 1}</span>
                   <div className="w-10 h-10 rounded bg-base-100 border border-base-content/20 overflow-hidden">
                     {product.image ? (
-                      <img src={product.image.startsWith('http') ? product.image : `http://localhost:5000${product.image}`} alt={product.name} className="w-full h-full object-cover" />
+                      <img src={getAssetUrl(product.image)} alt={product.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-neutral/5">CS</div>
                     )}

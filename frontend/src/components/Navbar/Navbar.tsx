@@ -432,15 +432,15 @@ const Navbar = ({ children }: { children: ReactNode }) => {
             <Link to="/#catalogo" onClick={closeDrawer} className={mobileNavLinkClass}>
               Catálogo
             </Link>
-            {config?.telefono_contacto && (
+            {config?.youtube_url && (
               <a
-                href={`https://wa.me/${config.telefono_contacto.replace(/\D/g, "")}`}
+                href={config.youtube_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={closeDrawer}
                 className={mobileNavLinkClass}
               >
-                WhatsApp
+                YouTube
               </a>
             )}
           </nav>

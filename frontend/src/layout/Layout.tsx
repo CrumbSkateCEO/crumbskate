@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar/Navbar";
 import { useConfig } from "../context/ConfigContext";
-import { FaWhatsapp, FaInstagram, FaEnvelope } from "react-icons/fa";
+import { FaYoutube, FaInstagram, FaEnvelope } from "react-icons/fa";
 
 const Layout = () => {
   const { config } = useConfig();
@@ -27,9 +27,9 @@ const Layout = () => {
               </p>
               
               <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs font-mono font-bold uppercase tracking-widest">
-                {config.telefono_contacto && (
-                  <a href={`https://wa.me/${config.telefono_contacto.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="btn btn-outline btn-circle hover:bg-primary hover:text-primary-content hover:border-primary transition-colors">
-                    <FaWhatsapp size={20} />
+                {config.youtube_url && (
+                  <a href={config.youtube_url} target="_blank" rel="noreferrer" className="btn btn-outline btn-circle hover:bg-primary hover:text-primary-content hover:border-primary transition-colors">
+                    <FaYoutube size={20} />
                   </a>
                 )}
                 {config.email_contacto && (
