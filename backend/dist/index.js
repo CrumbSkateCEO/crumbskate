@@ -106,6 +106,7 @@ app.use('/api/reportes', reportes_routes_1.default);
 // Manejo centralizado de errores (debe ser el último middleware)
 app.use(errorHandler_1.default);
 // Iniciar servidor
+const port = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
