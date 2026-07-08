@@ -11,6 +11,7 @@ import OrderDetail from "./pages/OrderDetail";
 import ResetPassword from "./pages/ResetPassword";
 import NuevaContrasena from "./pages/NuevaContrasena";
 import Terminos from "./pages/Terminos";
+import Promo from "./pages/Promo";
 
 import AdminLayout from "./layout/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -50,6 +51,9 @@ function App() {
               <Route path="/nueva-contrasena/:token" element={<NuevaContrasena />} />
               <Route path="/terminos" element={<Terminos />} />
             </Route>
+
+            {/* Publicidad / Promo reel (pantalla completa, sin layout) */}
+            <Route path="/promo" element={<Promo />} />
 
             {/* Rutas de Administración (Protegidas) */}
             <Route path="/admin" element={<AdminLayout />}>
