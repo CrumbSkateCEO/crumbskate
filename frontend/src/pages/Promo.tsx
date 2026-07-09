@@ -8,6 +8,27 @@ import { useCallback, useEffect, useRef, useState } from "react";
    - Estética cruda: MiniDV gastada, grano, cámara en mano,
      paneos con desenfoque, cortes secos a ~120 BPM (beat 500ms).
    - Exporta a MP4/WebM real con MediaRecorder.
+
+   FIXES DE CALIDAD DE EXPORTACIÓN (respecto a la versión anterior):
+   1) El grano/estática de pantalla completa es contenido muy caro
+      de comprimir. Se sube el bitrate de grabación bastante por
+      encima de lo típico para 1080p.
+   2) El encoder de hardware que Chrome usa para mux mp4/avc1 en
+      MediaRecorder suele IGNORAR videoBitsPerSecond y cae a menor
+      calidad. Se prioriza VP9/WebM (software), que sí respeta el
+      bitrate pedido, y se cae a mp4 solo si vp9 no está disponible.
+   3) `ctx.filter` (brightness/saturate) aplicado en cada frame sobre
+      casi toda la pantalla era el costo de dibujo más alto del loop
+      y podía provocar frames perdidos/duplicados al capturar el
+      stream. Ahora se precalcula UNA sola vez por imagen (al cargar)
+      en un canvas offscreen, y cada frame solo hace drawImage.
+   4) Las scanlines + viñeta (216 fillRect + gradiente radial por
+      frame) también se precalculan una sola vez en un canvas
+      offscreen y se pegan con un único drawImage por frame.
+   5) Se corrige una condición de carrera: las guías de recorte 9:16
+      podían colarse en el primer frame grabado porque el flag salía
+      de un re-render de React (asíncrono) en lugar de actualizarse
+      en el mismo tick en que arranca la grabación.
    ============================================================ */
 
 const W = 1920;
@@ -39,7 +60,11 @@ const IMG_SOURCES = {
   deck: "/promo/deck-diy.png",
 } as const;
 
-type ImgMap = Record<keyof typeof IMG_SOURCES, HTMLImageElement>;
+// Cada foto ahora viaja junto con su variante oscurecida/desaturada
+// precalculada (para el relleno lateral), así no hace falta aplicar
+// ctx.filter en cada frame.
+type Photo = { img: HTMLImageElement; dark: HTMLCanvasElement };
+type PhotoMap = Record<keyof typeof IMG_SOURCES, Photo>;
 
 /* ---------- utilidades ---------- */
 
@@ -70,17 +95,84 @@ function makeNoiseTiles(count = 4, size = 256) {
   return tiles;
 }
 
+// Precalcula UNA vez la variante oscura/desaturada de una imagen,
+// en vez de aplicar ctx.filter en cada uno de los ~700 frames del loop.
+function makeDarkVariant(img: HTMLImageElement): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = img.width;
+  c.height = img.height;
+  const dctx = c.getContext("2d")!;
+  dctx.filter = "brightness(0.28) saturate(0.6)";
+  dctx.drawImage(img, 0, 0);
+  return c;
+}
+
+// Precalcula scanlines + viñeta UNA vez (antes: 216 fillRect + un
+// gradiente radial recreados en cada frame).
+function makeStaticOverlay(): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = W;
+  c.height = H;
+  const octx = c.getContext("2d")!;
+
+  octx.save();
+  octx.globalAlpha = 0.1;
+  octx.fillStyle = "#000";
+  for (let y = 0; y < H; y += 5) octx.fillRect(0, y, W, 1.5);
+  octx.restore();
+
+  const v = octx.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 0.95);
+  v.addColorStop(0, "rgba(0,0,0,0)");
+  v.addColorStop(1, "rgba(0,0,0,0.5)");
+  octx.fillStyle = v;
+  octx.fillRect(0, 0, W, H);
+
+  return c;
+}
+
+// Cachea los gradientes estáticos de drawPhoto (dependen solo de
+// constantes W/H/CENTER_X, no de nada por-frame) para no recrearlos
+// en cada llamada. Se guardan por contexto porque CanvasGradient
+// está atado al ctx que lo creó.
+const photoGradientCache = new WeakMap<
+  CanvasRenderingContext2D,
+  { sideLeft: CanvasGradient; sideRight: CanvasGradient; bottomFade: CanvasGradient }
+>();
+
+function getPhotoGradients(ctx: CanvasRenderingContext2D) {
+  let g = photoGradientCache.get(ctx);
+  if (!g) {
+    const sideLeft = ctx.createLinearGradient(CENTER_X - 160, 0, CENTER_X + 40, 0);
+    sideLeft.addColorStop(0, "rgba(0,0,0,0.85)");
+    sideLeft.addColorStop(1, "rgba(0,0,0,0)");
+
+    const sideRight = ctx.createLinearGradient(W - CENTER_X + 160, 0, W - CENTER_X - 40, 0);
+    sideRight.addColorStop(0, "rgba(0,0,0,0.85)");
+    sideRight.addColorStop(1, "rgba(0,0,0,0)");
+
+    const bottomFade = ctx.createLinearGradient(0, H * 0.45, 0, H);
+    bottomFade.addColorStop(0, "rgba(0,0,0,0)");
+    bottomFade.addColorStop(1, "rgba(0,0,0,0.82)");
+
+    g = { sideLeft, sideRight, bottomFade };
+    photoGradientCache.set(ctx, g);
+  }
+  return g;
+}
+
 /* ---------- dibujo de escenas ---------- */
 
 // Foto vertical a altura completa, centrada (center-safe),
 // con relleno lateral oscuro estirado de la misma foto.
 function drawPhoto(
   ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
+  photo: Photo,
   t: number,
   sceneT: number,
   sceneDur: number
 ) {
+  const { img, dark } = photo;
+
   // paneo de latigazo al entrar (primeros 180ms) + drift de zoom
   const whip = Math.max(0, 1 - sceneT / 180);
   const whipX = whip * whip * 220 * (rnd(Math.floor(t / 90)) > 0.5 ? 1 : -1);
@@ -90,11 +182,8 @@ function drawPhoto(
   const sy = (rnd(f + 99) - 0.5) * 7;
   const zoom = 1.02 + 0.07 * (sceneT / sceneDur);
 
-  // relleno lateral: foto estirada y aplastada, muy oscura
-  ctx.save();
-  ctx.filter = "brightness(0.28) saturate(0.6)";
-  ctx.drawImage(img, -40 + sx * 0.4, -40, W + 80, H + 80);
-  ctx.restore();
+  // relleno lateral: variante oscura precalculada, sin ctx.filter por frame
+  ctx.drawImage(dark, -40 + sx * 0.4, -40, W + 80, H + 80);
 
   // foto principal centrada a altura completa
   const ph = H * zoom;
@@ -113,23 +202,15 @@ function drawPhoto(
   }
   ctx.drawImage(img, px, py, pw, ph);
 
-  // viñeta lateral para fundir la foto con el relleno
-  const grad = ctx.createLinearGradient(CENTER_X - 160, 0, CENTER_X + 40, 0);
-  grad.addColorStop(0, "rgba(0,0,0,0.85)");
-  grad.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = grad;
+  // viñeta lateral para fundir la foto con el relleno (gradientes cacheados)
+  const { sideLeft, sideRight, bottomFade } = getPhotoGradients(ctx);
+  ctx.fillStyle = sideLeft;
   ctx.fillRect(0, 0, CENTER_X + 40, H);
-  const grad2 = ctx.createLinearGradient(W - CENTER_X + 160, 0, W - CENTER_X - 40, 0);
-  grad2.addColorStop(0, "rgba(0,0,0,0.85)");
-  grad2.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = grad2;
+  ctx.fillStyle = sideRight;
   ctx.fillRect(W - CENTER_X - 40, 0, CENTER_X + 40, H);
 
   // oscurecer base para el texto
-  const g = ctx.createLinearGradient(0, H * 0.45, 0, H);
-  g.addColorStop(0, "rgba(0,0,0,0)");
-  g.addColorStop(1, "rgba(0,0,0,0.82)");
-  ctx.fillStyle = g;
+  ctx.fillStyle = bottomFade;
   ctx.fillRect(0, 0, W, H);
 }
 
@@ -205,11 +286,11 @@ function drawStatic(ctx: CanvasRenderingContext2D, t: number, sceneT: number, no
   drawLines(ctx, t, sceneT, [{ text: "Nadie pidió permiso." }], H / 2);
 }
 
-function drawFlash(ctx: CanvasRenderingContext2D, t: number, sceneT: number, imgs: ImgMap) {
+function drawFlash(ctx: CanvasRenderingContext2D, t: number, sceneT: number, photos: PhotoMap) {
   // cortes cada medio beat: alterna imágenes en flashes duros
-  const order: (keyof ImgMap)[] = ["grind", "deck", "crew", "concrete"];
+  const order: (keyof PhotoMap)[] = ["grind", "deck", "crew", "concrete"];
   const idx = Math.floor(sceneT / (BEAT / 2)) % order.length;
-  drawPhoto(ctx, imgs[order[idx]], t, sceneT % (BEAT / 2), BEAT / 2);
+  drawPhoto(ctx, photos[order[idx]], t, sceneT % (BEAT / 2), BEAT / 2);
   // flash blanco en el corte
   const cutT = sceneT % (BEAT / 2);
   if (cutT < 60) {
@@ -287,8 +368,13 @@ function drawReveal(ctx: CanvasRenderingContext2D, t: number, sceneT: number) {
 
 /* ---------- overlays globales ---------- */
 
-function drawOverlays(ctx: CanvasRenderingContext2D, t: number, noise: HTMLCanvasElement[]) {
-  // grano
+function drawOverlays(
+  ctx: CanvasRenderingContext2D,
+  t: number,
+  noise: HTMLCanvasElement[],
+  staticOverlay: HTMLCanvasElement
+) {
+  // grano (animado, se recalcula por frame — es barato, es solo un pattern fill)
   const tile = noise[Math.floor(t / 80) % noise.length];
   ctx.save();
   ctx.globalAlpha = 0.07;
@@ -298,19 +384,8 @@ function drawOverlays(ctx: CanvasRenderingContext2D, t: number, noise: HTMLCanva
   ctx.fillRect(0, 0, W, H);
   ctx.restore();
 
-  // scanlines sutiles
-  ctx.save();
-  ctx.globalAlpha = 0.10;
-  ctx.fillStyle = "#000";
-  for (let y = 0; y < H; y += 5) ctx.fillRect(0, y, W, 1.5);
-  ctx.restore();
-
-  // viñeta
-  const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 0.95);
-  v.addColorStop(0, "rgba(0,0,0,0)");
-  v.addColorStop(1, "rgba(0,0,0,0.5)");
-  ctx.fillStyle = v;
-  ctx.fillRect(0, 0, W, H);
+  // scanlines + viñeta: precalculadas una sola vez, ahora es un solo drawImage
+  ctx.drawImage(staticOverlay, 0, 0);
 
   // parpadeo de exposición analógico
   if (rnd(Math.floor(t / 120)) > 0.93) {
@@ -324,8 +399,9 @@ function drawOverlays(ctx: CanvasRenderingContext2D, t: number, noise: HTMLCanva
 function drawFrame(
   ctx: CanvasRenderingContext2D,
   t: number,
-  imgs: ImgMap,
-  noise: HTMLCanvasElement[]
+  photos: PhotoMap,
+  noise: HTMLCanvasElement[],
+  staticOverlay: HTMLCanvasElement
 ) {
   const time = t % DURATION;
   const scene = SCENES.find((s) => time >= s.start && time < s.end) ?? SCENES[0];
@@ -341,7 +417,7 @@ function drawFrame(
       drawStatic(ctx, time, sceneT, noise);
       break;
     case "asfalto":
-      drawPhoto(ctx, imgs.grind, time, sceneT, sceneDur);
+      drawPhoto(ctx, photos.grind, time, sceneT, sceneDur);
       drawKicker(ctx, sceneT, "El rugido del uretano", H - 360);
       drawLines(ctx, time, sceneT, [
         { text: "El asfalto" },
@@ -349,14 +425,14 @@ function drawFrame(
       ], H - 265);
       break;
     case "golpe":
-      drawPhoto(ctx, imgs.concrete, time, sceneT, sceneDur);
+      drawPhoto(ctx, photos.concrete, time, sceneT, sceneDur);
       drawLines(ctx, time, sceneT, [
         { text: "Resiste", size: 130 },
         { text: "el golpe.", size: 130, color: RED_LIGHT },
       ], H / 2 - 60);
       break;
     case "romperse":
-      drawPhoto(ctx, imgs.deck, time, sceneT, sceneDur);
+      drawPhoto(ctx, photos.deck, time, sceneT, sceneDur);
       drawKicker(ctx, sceneT, "Tabla astillada, tail muerto", H - 400);
       drawLines(ctx, time, sceneT, [
         { text: "Construido para" },
@@ -365,21 +441,21 @@ function drawFrame(
       ], H - 310);
       break;
     case "ruido":
-      drawPhoto(ctx, imgs.crew, time, sceneT, sceneDur);
+      drawPhoto(ctx, photos.crew, time, sceneT, sceneDur);
       drawLines(ctx, time, sceneT, [
         { text: "Tu tabla.", size: 120 },
         { text: "Tu ruido.", size: 120, color: RED_LIGHT },
       ], H - 300);
       break;
     case "flash":
-      drawFlash(ctx, time, sceneT, imgs);
+      drawFlash(ctx, time, sceneT, photos);
       break;
     case "reveal":
       drawReveal(ctx, time, sceneT);
       break;
   }
 
-  drawOverlays(ctx, time, noise);
+  drawOverlays(ctx, time, noise, staticOverlay);
 
   // corte duro: frame negro de 40ms en cada cambio de escena
   if (sceneT < 40 && scene.id !== "static") {
@@ -392,8 +468,9 @@ function drawFrame(
 
 export default function Promo() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imgsRef = useRef<ImgMap | null>(null);
+  const photosRef = useRef<PhotoMap | null>(null);
   const noiseRef = useRef<HTMLCanvasElement[]>([]);
+  const staticOverlayRef = useRef<HTMLCanvasElement | null>(null);
   const startRef = useRef<number>(performance.now());
   const rafRef = useRef<number>(0);
 
@@ -401,17 +478,25 @@ export default function Promo() {
   const [showGuides, setShowGuides] = useState(false);
   const [recording, setRecording] = useState(false);
   const [progress, setProgress] = useState(0);
-  const guidesRef = useRef(false);
-  guidesRef.current = showGuides && !recording;
 
-  // carga de imágenes
+  // Refs de estado "en vivo" para el loop de rAF. `recordingRef` se
+  // actualiza de forma SÍNCRONA (no vía render de React) para que la
+  // grabación nunca alcance a incluir un frame con las guías puestas.
+  const showGuidesRef = useRef(false);
+  const recordingRef = useRef(false);
+
+  useEffect(() => {
+    showGuidesRef.current = showGuides;
+  }, [showGuides]);
+
+  // carga de imágenes + precálculo de variantes oscuras y overlay estático
   useEffect(() => {
     let alive = true;
-    const entries = Object.entries(IMG_SOURCES) as [keyof ImgMap, string][];
+    const entries = Object.entries(IMG_SOURCES) as [keyof PhotoMap, string][];
     Promise.all(
       entries.map(
         ([key, src]) =>
-          new Promise<[keyof ImgMap, HTMLImageElement]>((res, rej) => {
+          new Promise<[keyof PhotoMap, HTMLImageElement]>((res, rej) => {
             const img = new Image();
             img.onload = () => res([key, img]);
             img.onerror = rej;
@@ -420,8 +505,12 @@ export default function Promo() {
       )
     ).then((loaded) => {
       if (!alive) return;
-      imgsRef.current = Object.fromEntries(loaded) as ImgMap;
+      const photos = Object.fromEntries(
+        loaded.map(([key, img]) => [key, { img, dark: makeDarkVariant(img) }])
+      ) as PhotoMap;
+      photosRef.current = photos;
       noiseRef.current = makeNoiseTiles();
+      staticOverlayRef.current = makeStaticOverlay();
       setReady(true);
     });
     return () => {
@@ -436,10 +525,11 @@ export default function Promo() {
     const ctx = canvas.getContext("2d")!;
     const loop = () => {
       const t = performance.now() - startRef.current;
-      drawFrame(ctx, t, imgsRef.current!, noiseRef.current);
-      if (guidesRef.current) {
-        // guías del recorte 9:16 (solo preview, nunca se graban... 
-        // se graban porque es el mismo canvas, por eso se apagan al grabar)
+      drawFrame(ctx, t, photosRef.current!, noiseRef.current, staticOverlayRef.current!);
+      if (showGuidesRef.current && !recordingRef.current) {
+        // guías del recorte 9:16 (solo preview — recordingRef garantiza
+        // que nunca se cuelen en el video grabado, ni siquiera en el
+        // primer frame antes de que React re-renderice)
         ctx.save();
         ctx.strokeStyle = "rgba(255,255,255,0.55)";
         ctx.setLineDash([14, 10]);
@@ -459,20 +549,29 @@ export default function Promo() {
 
   const download = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || recording) return;
+    if (!canvas || recordingRef.current) return;
 
-    const mp4 = MediaRecorder.isTypeSupported("video/mp4;codecs=avc1")
-      ? "video/mp4;codecs=avc1"
-      : MediaRecorder.isTypeSupported("video/mp4")
-        ? "video/mp4"
-        : null;
-    const mime = mp4 ?? "video/webm;codecs=vp9";
-    const ext = mp4 ? "mp4" : "webm";
+    // Se prioriza VP9/WebM: el encoder de hardware que Chrome usa para
+    // mux directo a mp4/avc1 en MediaRecorder suele ignorar
+    // videoBitsPerSecond y produce archivos de menor calidad. VP9 por
+    // software sí respeta el bitrate pedido — clave para contenido con
+    // grano/ruido de pantalla completa como este.
+    const vp9 = "video/webm;codecs=vp9";
+    const avc1 = "video/mp4;codecs=avc1";
+    const mime = MediaRecorder.isTypeSupported(vp9)
+      ? vp9
+      : MediaRecorder.isTypeSupported(avc1)
+        ? avc1
+        : "video/mp4";
+    const ext = mime.startsWith("video/webm") ? "webm" : "mp4";
 
     const stream = canvas.captureStream(30);
     const rec = new MediaRecorder(stream, {
       mimeType: mime,
-      videoBitsPerSecond: 12_000_000,
+      // Bitrate alto a propósito: el grano/estática de pantalla completa
+      // es contenido de alta frecuencia, muy caro de comprimir. Con menos
+      // bitrate esto se ve blocky justo donde más se nota (fotos y texto).
+      videoBitsPerSecond: 32_000_000,
     });
     const chunks: Blob[] = [];
     rec.ondataavailable = (e) => {
@@ -486,11 +585,15 @@ export default function Promo() {
       a.download = `crumbskate-promo-agosto2026.${ext}`;
       a.click();
       URL.revokeObjectURL(url);
+      recordingRef.current = false;
       setRecording(false);
       setProgress(0);
     };
 
-    // reinicia el video desde 0 y graba exactamente un loop completo
+    // reinicia el video desde 0 y graba exactamente un loop completo.
+    // recordingRef se marca ANTES que nada más, en el mismo tick, para
+    // que el loop de rAF nunca dibuje las guías durante la captura.
+    recordingRef.current = true;
     setRecording(true);
     startRef.current = performance.now();
     rec.start();
@@ -504,7 +607,7 @@ export default function Promo() {
       rec.stop();
       stream.getTracks().forEach((tr) => tr.stop());
     }, DURATION + 150);
-  }, [recording]);
+  }, []);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-5 bg-black px-4 py-8">
